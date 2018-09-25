@@ -23,6 +23,9 @@ int yyline = 1;
 WS          [ \t]
 
 %%
+[+-]?[0-9]+	{yylval.as_int = parseInt(yytext);
+		 return (INT_C);}
+
 "/*"        { yERROR("Change this - comment unimplemented."); }
 
 .           { yERROR("Unknown token"); }
