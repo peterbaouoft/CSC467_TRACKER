@@ -20,11 +20,16 @@ int yyline = 1;
 %}
 %option noyywrap
 
-WS          [ \t]
+WS	[ \t]
+DIGIT	[0-9]
 
 %%
-[+-]?[0-9]+	{yylval.as_int = parseInt(yytext);
+[+-]?DIGIT+	{yylval.as_int = parseInt(yytext);
 		 return (INT_C);}
+
+DIGIT+"."DIGIT*	{yylval.as_float = parseDouble(yytext);
+		 return (FLOAT_C);}
+
 
 "/*"        { yERROR("Change this - comment unimplemented."); }
 
