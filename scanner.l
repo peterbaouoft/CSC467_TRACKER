@@ -20,7 +20,7 @@ int yyline = 1;
 %}
 %option noyywrap
 
-WS	[ \t]
+WS      [ \t]
 NL	[\n]
 BL	[true|false]
 DIGIT	[0-9]
@@ -40,9 +40,11 @@ DIGIT	[0-9]
 [0-9]+"."[0-9]*	{yylval.as_float = atof(yytext);
 		 return (FLOAT);}
 
+"/*"            { yERROR("Change this - comment unimplemented."); }
 
-"/*"        { yERROR("Change this - comment unimplemented."); }
+if              { yTRACE(IF); return IF; }
+else            { yTRACE(ELSE); return ELSE;}
 
-.           { yERROR("Unknown token"); }
+.               { yERROR("Unknown token"); }
 
 %%
