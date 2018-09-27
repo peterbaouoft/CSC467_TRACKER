@@ -26,17 +26,18 @@ BL	[true|false]
 DIGIT	[0-9]
 
 %%
-WS		;
+[ \t]		;
 
-NL		{yyline++;}
+[\n]		{yyline++;}
 
-BL		{yylval.as_bool = yytext;
+[true|false]	{yylval.as_bool = yytext;
+		 printf("boolean");
 		 return (BOOL);}
 
-[+-]?DIGIT+	{yylval.as_int = atoi(yytext);
+[+-]?[0-9]+	{yylval.as_int = atoi(yytext);
 		 return (INT);}
 
-DIGIT+"."DIGIT*	{yylval.as_float = atof(yytext);
+[0-9]+"."[0-9]*	{yylval.as_float = atof(yytext);
 		 return (FLOAT);}
 
 
