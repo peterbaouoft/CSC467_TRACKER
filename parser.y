@@ -1,7 +1,7 @@
 %{
 /***********************************************************************
  *   Interface to the parser module for CSC467 course project.
- * 
+ *
  *   Phase 2: Implement context free grammar for source language, and
  *            parse tracing functionality.
  *   Phase 3: Construct the AST for the source language program.
