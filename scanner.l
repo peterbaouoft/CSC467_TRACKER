@@ -21,9 +21,14 @@ int yyline = 1;
 %option noyywrap
 
 WS	[ \t]
+NL	[\n]
 DIGIT	[0-9]
 
 %%
+WS		;
+
+NL		{yyline++;}
+
 [+-]?DIGIT+	{yylval.as_int = parseInt(yytext);
 		 return (INT_C);}
 

@@ -54,22 +54,35 @@ extern int yyline;        /* variable holding current line number   */
 
 %union {
 	bool as_bool;
-	bvec2 as_bvec2;
-	bvec3 as_bvec3;
-	bvec4 as_bvec4;
+	bool[2] as_bvec2;
+	bool[3] as_bvec3;
+	bool[4] as_bvec4;
 
 	int as_int;
-	ivec2 as_ivec2;
-	ivec3 as_ivec3;
-	ivec4 as_ivec4;
+	int[2] as_ivec2;
+	int[3] as_ivec3;
+	int[4] as_ivec4;
 
 	float as_float;
-	vec2 as_vec2;
-	vec3 as_vec3;
-	vec4 as_vec4;
+	float[2] as_vec2;
+	float[3] as_vec3;
+	float[4] as_vec4;
 }
 // TODO:Replace myToken with your tokens, you can use these tokens in flex
-%token           INT_C  
+%token <as_bool>  BOOL
+%token <as_bvec2> BVEC2
+%token <as_bvec3> BVEC3
+%token <as_bvec4> BVEC4
+
+%token <as_int>   INT
+%token <as_ivec2> IVEC2
+%token <as_ivec3> IVEC3
+%token <as_ivec4> IVEC4
+
+%token <as_float> FLOAT
+%token <as_vec2>  VEC2
+%token <as_vec3>  VEC3
+%token <as_vec4>  VEC4	  
 
 
 %start    program
