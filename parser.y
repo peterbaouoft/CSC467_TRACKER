@@ -69,9 +69,6 @@ extern int yyline;        /* variable holding current line number   */
 	float as_vec4 [4];
 }
 // TODO:Replace myToken with your tokens, you can use these tokens in flex
-// dummy to suppress error
-%token myToken1 myToken2
-
 %token <as_bool>  BOOL
 %token <as_bvec2> BVEC2
 %token <as_bvec3> BVEC3
@@ -86,6 +83,8 @@ extern int yyline;        /* variable holding current line number   */
 %token <as_vec2>  VEC2
 %token <as_vec3>  VEC3
 %token <as_vec4>  VEC4	  
+
+%token IF ELSE
 
 
 %start    program
@@ -102,16 +101,16 @@ extern int yyline;        /* variable holding current line number   */
  *    1. Add code to rules for construction of AST.
  ***********************************************************************/
 program
-  :   tokens       
+  :   tokens
   ;
 tokens
-  :  tokens token  
-  |      
+  :  tokens token
+  |
   ;
 // TODO: replace myToken with the token the you defined.
 token
-  :     myToken1 
-  |     myToken2                     
+  :     IF
+  |     ELSE
   ;
 
 
@@ -128,7 +127,7 @@ void yyerror(const char* s) {
     return;    /* Error has already been reported by scanner */
   else
     errorOccurred = 1;
-        
+
   fprintf(errorFile, "\nPARSER ERROR, LINE %d",yyline);
   if (strcmp(s, "parse error")) {
     if (strncmp(s, "parse error, ", 13))
