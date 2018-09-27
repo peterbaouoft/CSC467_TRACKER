@@ -7,7 +7,7 @@
 #include "common.h"
 #include "parser.tab.h"
 #include "string.h"
-
+#include <stdlib.h>
 
 #define YY_USER_INIT { yyin = inputFile; }
 #define	yyinput      input
@@ -22,6 +22,7 @@ int yyline = 1;
 
 WS	[ \t]
 NL	[\n]
+BL	[true|false]
 DIGIT	[0-9]
 
 %%
@@ -29,11 +30,14 @@ WS		;
 
 NL		{yyline++;}
 
-[+-]?DIGIT+	{yylval.as_int = parseInt(yytext);
-		 return (INT_C);}
+BL		{yylval.as_bool = yytext;
+		 return (BOOL);}
 
-DIGIT+"."DIGIT*	{yylval.as_float = parseDouble(yytext);
-		 return (FLOAT_C);}
+[+-]?DIGIT+	{yylval.as_int = atoi(yytext);
+		 return (INT);}
+
+DIGIT+"."DIGIT*	{yylval.as_float = atof(yytext);
+		 return (FLOAT);}
 
 
 "/*"        { yERROR("Change this - comment unimplemented."); }
