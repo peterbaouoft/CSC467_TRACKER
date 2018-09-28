@@ -20,31 +20,42 @@ int yyline = 1;
 %}
 %option noyywrap
 
-WS      [ \t]
-NL	[\n]
-BL	[true|false]
-DIGIT	[0-9]
+RX_WS    [ \t]
+RX_ENTER [\n]
+
+RX_BOOL  (true|false)
+
+RX_SIGN  [+-]
+RX_DIGIT [0-9]
+RX_INT   {RX_SIGN}?{RX_DIGIT}+
+RX_FLOAT {RX_INT}"."{RX_DIGIT}*
+
+RX_CHAR [a-zA-Z]
+RX_ID   {RX_CHAR}+[{RX_CHAR}{RX_DIGIT}]*
 
 %%
-[ \t]		;
+if   { yTRACE(IF); return IF; }
+else { yTRACE(ELSE); return ELSE;}
 
-[\n]		{yyline++;}
+{RX_WS}    ;
+{RX_ENTER} {yyline++;}
 
-[true|false]	{yylval.as_bool = yytext;
-		 printf("boolean");
-		 return (BOOL);}
+{RX_BOOL}  {yylval.as_bool = yytext;
+            yTRACE (TK_BOOL);
+            return (TK_BOOL);}
 
-[+-]?[0-9]+	{yylval.as_int = atoi(yytext);
-		 return (INT);}
+{RX_ID}     {yTRACE (TK_ID); return (TK_ID);}
 
-[0-9]+"."[0-9]*	{yylval.as_float = atof(yytext);
-		 return (FLOAT);}
+{RX_INT}   {yylval.as_int = atoi(yytext);
+            yTRACE (TK_INT);
+            return (TK_INT);}
 
-"/*"            { yERROR("Change this - comment unimplemented."); }
+{RX_FLOAT} {yylval.as_float = atof(yytext);
+            yTRACE (TK_FLOAT);
+            return (TK_FLOAT);}
 
-if              { yTRACE(IF); return IF; }
-else            { yTRACE(ELSE); return ELSE;}
 
-.               { yERROR("Unknown token"); }
+"/*" { yERROR("Change this - comment unimplemented."); }
+.    { yERROR("Unknown token"); }
 
 %%
