@@ -1,0 +1,5 @@
+a*b c / d b ^ a
+! test
+
+a + b
++5 test 0AB
