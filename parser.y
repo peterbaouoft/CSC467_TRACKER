@@ -75,8 +75,19 @@ extern int yyline;        /* variable holding current line number   */
 
 %token TK_ID
 
+/**********************************************************************
+ *                           KEYWORDS
+**********************************************************************/
 %token IF ELSE
 
+/****************************OPERATORS********************************/
+%token LEFT_PARENTHESIS RIGHT_PARENTHESIS LEFT_BRACKET RIGHT_BRACKET
+%token NOT
+%token CARET /* ^ operator */
+%token TIMES DIVIDE
+%token PLUS MINUS
+%token DOUBLE_EQ N_EQ GREATER SMALLER S_EQ G_EQ
+%token AND OR
 
 %start    program
 

@@ -54,8 +54,45 @@ else { yTRACE(ELSE); return ELSE;}
             yTRACE (TK_FLOAT);
             return (TK_FLOAT);}
 
+"("         {yTRACE (LEFT_PARENTHESIS); return LEFT_PARENTHESIS;}
+
+")"         {yTRACE (RIGHT_PARENTHESIS); return RIGHT_PARENTHESIS;}
+
+"["         {yTRACE (LEFT_BRACKET); return LEFT_BRACKET;}
+
+"]"         {yTRACE (RIGHT_BRACKET); return RIGHT_BRACKET;}
+
+"!"         {yTRACE (NOT); return NOT;}
+
+"^"         {yTRACE (CARET); return CARET;}
+
+"*"         {yTRACE (TIMES); return TIMES;}
+
+"/"         {yTRACE (DIVIDE); return DIVIDE;}
+
+"+"         {yTRACE (PLUS); return PLUS;}
+
+"-"         {yTRACE (MINUS); return MINUS;}
+
+"=="        {yTRACE (DOUBLE_EQ); return DOUBLE_EQ;}
+
+"!="        {yTRACE (N_EQ); return N_EQ;}
+
+">"         {yTRACE (GREATER); return GREATER;}
+
+">="        {yTRACE (G_EQ); return G_EQ;}
+
+"<"         {yTRACE (SMALLER); return SMALLER;}
+
+"<="        {yTRACE (S_EQ); return S_EQ;}
+
+"&&"        {yTRACE(AND); return AND;}
+
+"||"        {yTRACE(OR); return OR;}
 
 "/*" { yERROR("Change this - comment unimplemented."); }
 .    { yERROR("Unknown token"); }
 
 %%
+
+
