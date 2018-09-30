@@ -33,12 +33,21 @@ RX_FLOAT {RX_INT}"."{RX_DIGIT}*
 RX_CHAR [a-zA-Z]
 RX_ID   {RX_CHAR}+[{RX_CHAR}{RX_DIGIT}]*
 
+RX_FUNC_NAMES (lit|dp3|rsq)
+
 %%
+
+{RX_WS}    ;
+
 if   { yTRACE(IF); return IF; }
 else { yTRACE(ELSE); return ELSE;}
 
-{RX_WS}    ;
 {RX_ENTER} {yyline++;}
+{RX_FUNC_NAMES}     {yTRACE(FUNC_NAME); strncpy(yylval.func_name, yytext, 4) ;
+                     printf("The input func name is %s\n", yylval.func_name);
+                     return (FUNC_NAME);}
+
+while           {yTRACE(WHILE); return WHILE;}
 
 {RX_BOOL}  {yylval.as_bool = yytext;
             yTRACE (TK_BOOL);
@@ -53,6 +62,11 @@ else { yTRACE(ELSE); return ELSE;}
 {RX_FLOAT} {yylval.as_float = atof(yytext);
             yTRACE (TK_FLOAT);
             return (TK_FLOAT);}
+
+"{"         {yTRACE (LEFT_CURLY); return LEFT_CURLY;}
+
+"}"         {yTRACE (RIGHT_CURLY); return RIGHT_CURLY;}
+
 
 "("         {yTRACE (LEFT_PARENTHESIS); return LEFT_PARENTHESIS;}
 
@@ -90,9 +104,12 @@ else { yTRACE(ELSE); return ELSE;}
 
 "||"        {yTRACE(OR); return OR;}
 
+","         {yTRACE (COMMA); return COMMA;}
+
+";"         {yTRACE (SEMICOLON); return SEMICOLON;}
+
 "/*" { yERROR("Change this - comment unimplemented."); }
 .    { yERROR("Unknown token"); }
 
 %%
-
 

@@ -67,6 +67,8 @@ extern int yyline;        /* variable holding current line number   */
 	float as_vec2 [2];
 	float as_vec3 [3];
 	float as_vec4 [4];
+
+        char func_name[3];
 }
 // TODO:Replace myToken with your tokens, you can use these tokens in flex
 %token TK_BOOL TK_BVEC2 TK_BVEC3 TK_BVEC4
@@ -88,6 +90,9 @@ extern int yyline;        /* variable holding current line number   */
 %token PLUS MINUS
 %token DOUBLE_EQ N_EQ GREATER SMALLER S_EQ G_EQ
 %token AND OR
+
+%token COMMA SEMICOLON
+%token FUNC_NAME LEFT_CURLY RIGHT_CURLY WHILE
 
 %start    program
 
