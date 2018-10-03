@@ -30,8 +30,8 @@ RX_DIGIT [0-9]
 RX_INT   {RX_SIGN}?{RX_DIGIT}+
 RX_FLOAT {RX_INT}"."{RX_DIGIT}*
 
-RX_CHAR [a-zA-Z]
-RX_ID   {RX_CHAR}+[{RX_CHAR}{RX_DIGIT}]*
+RX_CHAR [a-zA-Z_]
+RX_ID   [A-Za-z_][A-Za-z0-9_]*
 
 RX_FUNC_NAMES (lit|dp3|rsq)
 
@@ -43,6 +43,7 @@ if   { yTRACE(IF); return IF; }
 else { yTRACE(ELSE); return ELSE;}
 
 {RX_ENTER} {yyline++;}
+
 {RX_FUNC_NAMES}     {yTRACE(FUNC_NAME); strncpy(yylval.func_name, yytext, 4) ;
                      printf("The input func name is %s\n", yylval.func_name);
                      return (FUNC_NAME);}
