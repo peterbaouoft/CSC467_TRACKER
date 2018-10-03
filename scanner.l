@@ -8,11 +8,14 @@
 #include "parser.tab.h"
 #include "string.h"
 #include <stdlib.h>
+#include <ctype.h>
 
 #define YY_USER_INIT { yyin = inputFile; }
 #define	yyinput      input
 #define yTRACE(x)    { if (traceScanner) fprintf(traceFile, "TOKEN %3d : %s\n", x, yytext); }
 #define yERROR(x)    { fprintf(errorFile, "\nLEXICAL ERROR, LINE %d: %s\n", yyline, x); errorOccurred = TRUE; yyterminate(); }
+
+void process_type();
 
 int CheckInt(void);
 int yyline = 1;
@@ -34,6 +37,9 @@ RX_CHAR [a-zA-Z_]
 RX_ID   [A-Za-z_][A-Za-z0-9_]*
 
 RX_FUNC_NAMES (lit|dp3|rsq)
+RX_INT_TYPE (int|ivec2|ivec3|ivec4)
+RX_BOOL_TYPE (bool|bvec2|bvec3|bvec4)
+RX_FLOAT_TYPE (float|vec2|vec3|vec4)
 
 %%
 
@@ -53,6 +59,15 @@ while           {yTRACE(WHILE); return WHILE;}
 {RX_BOOL}  {yylval.as_bool = yytext;
             yTRACE (TK_BOOL);
             return (TK_BOOL);}
+
+{RX_INT_TYPE} {yTRACE(INT_TYPE); process_type();
+               return INT_TYPE;}
+
+{RX_BOOL_TYPE} {yTRACE(BOOL_TYPE); process_type();
+                return BOOL_TYPE;}
+
+{RX_FLOAT_TYPE} {yTRACE(FLOAT_TYPE); process_type();
+                return FLOAT_TYPE;}
 
 {RX_ID}     {yTRACE (TK_ID); return (TK_ID);}
 
@@ -114,3 +129,14 @@ while           {yTRACE(WHILE); return WHILE;}
 
 %%
 
+void process_type() {
+    /* Put dimension into yylval using last character
+       of the type*/
+    char last_char = yytext[strlen(yytext) - 1];
+
+    if (isdigit(last_char))
+        yylval.vec_dimension = last_char - '0'; /* Convert char to a int */
+    else
+        yylval.vec_dimension = 1;
+    printf("The vec dimension is %d\n", yylval.vec_dimension);
+}
