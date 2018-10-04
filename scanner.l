@@ -42,7 +42,7 @@ RX_FUNC_NAMES (lit|dp3|rsq)
 RX_INT_TYPE (int|ivec2|ivec3|ivec4)
 RX_BOOL_TYPE (bool|bvec2|bvec3|bvec4)
 RX_FLOAT_TYPE (float|vec2|vec3|vec4)
-
+RX_NUMBER_ERROR [0]{RX_INT}{RX_FLOAT}?
 
 %%
 
@@ -80,6 +80,7 @@ while           {yTRACE(WHILE); return WHILE;}
                  yTRACE(TK_FLOAT);
                  return (TK_FLOAT);}
 
+{RX_NUMBER_ERROR} {yERROR("Invalid number");}
 
 {RX_FLOAT}      {int res = process_float();
                  if (res == -1)
