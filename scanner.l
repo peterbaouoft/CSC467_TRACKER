@@ -24,14 +24,13 @@ int yyline = 1;
 %option noyywrap
 %x comment
 
-RX_WS    [ \t]
+RX_WS    [ \t\r]
 RX_ENTER [\n]
 
 RX_BOOL  (true|false)
 
-RX_SIGN  [+-]
 RX_DIGIT [0-9]
-RX_INT   {RX_SIGN}?{RX_DIGIT}+
+RX_INT   {RX_DIGIT}+
 RX_FLOAT {RX_INT}"."{RX_DIGIT}*
 
 RX_CHAR [a-zA-Z_]
@@ -81,6 +80,8 @@ const       {yTRACE (CONST_TYPE); return (CONST_TYPE);}
 {RX_FLOAT} {yylval.as_float = atof(yytext);
             yTRACE (TK_FLOAT);
             return (TK_FLOAT);}
+
+"="         {yTRACE (EQ); return EQ;}
 
 "{"         {yTRACE (LEFT_CURLY); return LEFT_CURLY;}
 
@@ -132,8 +133,9 @@ const       {yTRACE (CONST_TYPE); return (CONST_TYPE);}
 <comment>\n             {yyline++;}
 <comment>[^*\n]*        ;
 <comment>"*"+[^*/\n]*   ;
-<comment>"*/"           BEGIN(INITIAL);
-<comment><<EOF>>       {BEGIN(INITIAL); yERROR("No closing comment(*/) until EOF\n");}
+<comment>"*"+"/"        BEGIN(INITIAL);
+<comment><<EOF>>       {BEGIN(INITIAL); yERROR("No closing comment(*/) until EOF");}
+
 
 .    { yERROR("Unknown token"); }
 
@@ -148,5 +150,5 @@ void process_type() {
         yylval.vec_dimension = last_char - '0'; /* Convert char to a int */
     else
         yylval.vec_dimension = 1;
-    printf("The vec dimension is %d\n", yylval.vec_dimension);
+    // printf("The vec dimension is %d\n", yylval.vec_dimension); /*Comment it out for now, can use debug later */
 }

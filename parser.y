@@ -79,7 +79,7 @@ extern int yyline;        /* variable holding current line number   */
 %token CARET /* ^ operator */
 %token TIMES DIVIDE
 %token PLUS MINUS
-%token DOUBLE_EQ N_EQ GREATER SMALLER S_EQ G_EQ
+%token DOUBLE_EQ N_EQ GREATER SMALLER S_EQ G_EQ EQ
 %token AND OR
 
 %token COMMA SEMICOLON
