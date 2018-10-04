@@ -16,6 +16,7 @@
 #define yERROR(x)    { fprintf(errorFile, "\nLEXICAL ERROR, LINE %d: %s\n", yyline, x); errorOccurred = TRUE; yyterminate(); }
 
 void process_type();
+int process_float();
 
 int CheckInt(void);
 int yyline = 1;
@@ -31,7 +32,8 @@ RX_BOOL  (true|false)
 
 RX_DIGIT [0-9]
 RX_INT   {RX_DIGIT}+
-RX_FLOAT {RX_INT}"."{RX_DIGIT}*
+RX_FLOAT {RX_INT}?"."{RX_SCIENTIFIC}?[eE]?{RX_DIGIT}*
+RX_SCIENTIFIC {RX_DIGIT}[eE][-]?{RX_INT}
 
 RX_CHAR [a-zA-Z_]
 RX_ID   [A-Za-z_][A-Za-z0-9_]*
@@ -40,6 +42,7 @@ RX_FUNC_NAMES (lit|dp3|rsq)
 RX_INT_TYPE (int|ivec2|ivec3|ivec4)
 RX_BOOL_TYPE (bool|bvec2|bvec3|bvec4)
 RX_FLOAT_TYPE (float|vec2|vec3|vec4)
+
 
 %%
 
@@ -69,6 +72,24 @@ while           {yTRACE(WHILE); return WHILE;}
 {RX_FLOAT_TYPE} {yTRACE(FLOAT_TYPE); process_type();
                 return FLOAT_TYPE;}
 
+{RX_SCIENTIFIC} {int res = process_float();
+                  if (res == -1)
+                    yERROR("Invalid float number");
+                  if (res == -2)
+                    yERROR("Float number is out of range");
+                 yTRACE(TK_FLOAT);
+                 return (TK_FLOAT);}
+
+
+{RX_FLOAT}      {int res = process_float();
+                 if (res == -1)
+                    yERROR("Invalid float number");
+                 if (res == -2)
+                    yERROR("Float number is out of range");
+                 yTRACE (TK_FLOAT);
+                 return (TK_FLOAT);}
+
+
 const       {yTRACE (CONST_TYPE); return (CONST_TYPE);}
 
 {RX_ID}     {yTRACE (TK_ID); return (TK_ID);}
@@ -77,9 +98,6 @@ const       {yTRACE (CONST_TYPE); return (CONST_TYPE);}
             yTRACE (TK_INT);
             return (TK_INT);}
 
-{RX_FLOAT} {yylval.as_float = atof(yytext);
-            yTRACE (TK_FLOAT);
-            return (TK_FLOAT);}
 
 "="         {yTRACE (EQ); return EQ;}
 
@@ -152,3 +170,18 @@ void process_type() {
         yylval.vec_dimension = 1;
     // printf("The vec dimension is %d\n", yylval.vec_dimension); /*Comment it out for now, can use debug later */
 }
+
+int process_float() {
+    char *tmp_ptr;
+    float float_num;
+
+    float_num = strtof(yytext, &tmp_ptr);
+    if (strlen(tmp_ptr) == strlen(yytext))
+        return -1;
+    else if (float_num >  MAX_FLOAT)
+        return -2;
+    yylval.as_float = float_num;
+    return 0;
+}
+
+
