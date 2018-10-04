@@ -64,6 +64,7 @@ extern int yyline;        /* variable holding current line number   */
 %token TK_BOOL BOOL_TYPE
 %token TK_INT INT_TYPE
 %token TK_FLOAT FLOAT_TYPE
+%token CONST_TYPE
 
 %token TK_ID
 

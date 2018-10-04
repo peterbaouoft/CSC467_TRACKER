@@ -69,6 +69,8 @@ while           {yTRACE(WHILE); return WHILE;}
 {RX_FLOAT_TYPE} {yTRACE(FLOAT_TYPE); process_type();
                 return FLOAT_TYPE;}
 
+const       {yTRACE (CONST_TYPE); return (CONST_TYPE);}
+
 {RX_ID}     {yTRACE (TK_ID); return (TK_ID);}
 
 {RX_INT}   {yylval.as_int = atoi(yytext);
