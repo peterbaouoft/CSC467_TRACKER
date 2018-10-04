@@ -22,6 +22,7 @@ int yyline = 1;
 
 %}
 %option noyywrap
+%x comment
 
 RX_WS    [ \t]
 RX_ENTER [\n]
@@ -126,7 +127,14 @@ const       {yTRACE (CONST_TYPE); return (CONST_TYPE);}
 
 ";"         {yTRACE (SEMICOLON); return SEMICOLON;}
 
-"/*" { yERROR("Change this - comment unimplemented."); }
+"/*"         BEGIN(comment);
+
+<comment>\n             {yyline++;}
+<comment>[^*\n]*        ;
+<comment>"*"+[^*/\n]*   ;
+<comment>"*/"           BEGIN(INITIAL);
+<comment><<EOF>>       {BEGIN(INITIAL); yERROR("No closing comment(*/) until EOF\n");}
+
 .    { yERROR("Unknown token"); }
 
 %%
