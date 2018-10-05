@@ -49,116 +49,104 @@ RX_NUMBER_ERROR [0]{RX_INT}{RX_FLOAT}?
 
 {RX_WS}    ;
 
-if   { yTRACE(IF); return IF; }
-else { yTRACE(ELSE); return ELSE;}
+if                                  { yTRACE(IF); return IF; }
+else                                { yTRACE(ELSE); return ELSE;}
 
-{RX_ENTER} {yyline++;}
+{RX_ENTER}                          {yyline++;}
 
-{RX_FUNC_NAMES}     {yTRACE(FUNC_NAME); strncpy(yylval.func_name, yytext, 4) ;
-                     printf("The input func name is %s\n", yylval.func_name);
-                     return (FUNC_NAME);}
+{RX_FUNC_NAMES}                     {yTRACE(FUNC_NAME); strncpy(yylval.func_name, yytext, 4) ;
+                                     printf("The input func name is %s\n", yylval.func_name);
+                                     return (FUNC_NAME);}
 
-while           {yTRACE(WHILE); return WHILE;}
+while                               {yTRACE(WHILE); return WHILE;}
 
-{RX_BOOL}  {yylval.as_bool = yytext;
-            yTRACE (TK_BOOL);
-            return (TK_BOOL);}
+{RX_BOOL}                           {yylval.as_bool = yytext;
+                                     yTRACE (TK_BOOL);
+                                     return (TK_BOOL);}
 
-{RX_INT_TYPE} {yTRACE(INT_TYPE); process_type();
-               return INT_TYPE;}
+{RX_INT_TYPE}                       {yTRACE(INT_TYPE); process_type();
+                                     return INT_TYPE;}
 
-{RX_BOOL_TYPE} {yTRACE(BOOL_TYPE); process_type();
-                return BOOL_TYPE;}
+{RX_BOOL_TYPE}                      {yTRACE(BOOL_TYPE); process_type();
+                                     return BOOL_TYPE;}
 
-{RX_FLOAT_TYPE} {yTRACE(FLOAT_TYPE); process_type();
-                return FLOAT_TYPE;}
+{RX_FLOAT_TYPE}                     {yTRACE(FLOAT_TYPE); process_type();
+                                     return FLOAT_TYPE;}
 
-{RX_SCIENTIFIC} {yTRACE(TK_FLOAT);
-                  int res = process_float();
-                  if (res == -1)
-                    yERROR("Invalid float number");
-                  if (res == -2)
-                    yERROR("Float number is out of range");
+{RX_SCIENTIFIC}                     {yTRACE(TK_FLOAT);
+                                     process_float();
+                                     return (TK_FLOAT);}
 
-                 return (TK_FLOAT);}
+{RX_NUMBER_ERROR}                   {yERROR("Invalid number");}
 
-{RX_NUMBER_ERROR} {yERROR("Invalid number");}
+{RX_FLOAT}                          {yTRACE (TK_FLOAT);
+                                     process_float();
+                                     return (TK_FLOAT);}
 
-{RX_FLOAT}      {yTRACE (TK_FLOAT);
-                 int res = process_float();
-                 if (res == -1)
-                    yERROR("Invalid float number");
-                 if (res == -2)
-                    yERROR("Float number is out of range");
-                 return (TK_FLOAT);}
+const                               {yTRACE (CONST_TYPE); return (CONST_TYPE);}
 
+{RX_ID}                             {yTRACE (TK_ID); return (TK_ID);}
 
-const       {yTRACE (CONST_TYPE); return (CONST_TYPE);}
+{RX_INT}                            {yTRACE (TK_INT);
+                                     process_int();
+                                     return (TK_INT);}
 
-{RX_ID}     {yTRACE (TK_ID); return (TK_ID);}
+"="                                 {yTRACE (EQ); return EQ;}
 
-{RX_INT}   {yTRACE (TK_INT);
-            process_int();
-            return (TK_INT);}
+"{"                                 {yTRACE (LEFT_CURLY); return LEFT_CURLY;}
+
+"}"                                 {yTRACE (RIGHT_CURLY); return RIGHT_CURLY;}
 
 
-"="         {yTRACE (EQ); return EQ;}
+"("                                 {yTRACE (LEFT_PARENTHESIS); return LEFT_PARENTHESIS;}
 
-"{"         {yTRACE (LEFT_CURLY); return LEFT_CURLY;}
+")"                                 {yTRACE (RIGHT_PARENTHESIS); return RIGHT_PARENTHESIS;}
 
-"}"         {yTRACE (RIGHT_CURLY); return RIGHT_CURLY;}
+"["                                 {yTRACE (LEFT_BRACKET); return LEFT_BRACKET;}
 
+"]"                                 {yTRACE (RIGHT_BRACKET); return RIGHT_BRACKET;}
 
-"("         {yTRACE (LEFT_PARENTHESIS); return LEFT_PARENTHESIS;}
+"!"                                 {yTRACE (NOT); return NOT;}
 
-")"         {yTRACE (RIGHT_PARENTHESIS); return RIGHT_PARENTHESIS;}
+"^"                                 {yTRACE (CARET); return CARET;}
 
-"["         {yTRACE (LEFT_BRACKET); return LEFT_BRACKET;}
+"*"                                 {yTRACE (TIMES); return TIMES;}
 
-"]"         {yTRACE (RIGHT_BRACKET); return RIGHT_BRACKET;}
+"/"                                 {yTRACE (DIVIDE); return DIVIDE;}
 
-"!"         {yTRACE (NOT); return NOT;}
+"+"                                 {yTRACE (PLUS); return PLUS;}
 
-"^"         {yTRACE (CARET); return CARET;}
+"-"                                 {yTRACE (MINUS); return MINUS;}
 
-"*"         {yTRACE (TIMES); return TIMES;}
+"=="                                {yTRACE (DOUBLE_EQ); return DOUBLE_EQ;}
 
-"/"         {yTRACE (DIVIDE); return DIVIDE;}
+"!="                                {yTRACE (N_EQ); return N_EQ;}
 
-"+"         {yTRACE (PLUS); return PLUS;}
+">"                                 {yTRACE (GREATER); return GREATER;}
 
-"-"         {yTRACE (MINUS); return MINUS;}
+">="                                {yTRACE (G_EQ); return G_EQ;}
 
-"=="        {yTRACE (DOUBLE_EQ); return DOUBLE_EQ;}
+"<"                                 {yTRACE (SMALLER); return SMALLER;}
 
-"!="        {yTRACE (N_EQ); return N_EQ;}
+"<="                                {yTRACE (S_EQ); return S_EQ;}
 
-">"         {yTRACE (GREATER); return GREATER;}
+"&&"                                {yTRACE(AND); return AND;}
 
-">="        {yTRACE (G_EQ); return G_EQ;}
+"||"                                {yTRACE(OR); return OR;}
 
-"<"         {yTRACE (SMALLER); return SMALLER;}
+","                                 {yTRACE (COMMA); return COMMA;}
 
-"<="        {yTRACE (S_EQ); return S_EQ;}
+";"                                 {yTRACE (SEMICOLON); return SEMICOLON;}
 
-"&&"        {yTRACE(AND); return AND;}
+"/*"                                {BEGIN(comment);}
 
-"||"        {yTRACE(OR); return OR;}
+<comment>\n                         {yyline++;}
+<comment>[^*\n]*                    {;}
+<comment>"*"+[^*/\n]*               {;}
+<comment>"*"+"/"                    {BEGIN(INITIAL);}
+<comment><<EOF>>                    {BEGIN(INITIAL); yERROR("No closing comment(*/) until EOF");}
 
-","         {yTRACE (COMMA); return COMMA;}
-
-";"         {yTRACE (SEMICOLON); return SEMICOLON;}
-
-"/*"         BEGIN(comment);
-
-<comment>\n             {yyline++;}
-<comment>[^*\n]*        ;
-<comment>"*"+[^*/\n]*   ;
-<comment>"*"+"/"        BEGIN(INITIAL);
-<comment><<EOF>>       {BEGIN(INITIAL); yERROR("No closing comment(*/) until EOF");}
-
-
-.    { yERROR("Unknown token"); }
+.                                   { yERROR("Unknown token"); }
 
 %%
 
@@ -179,10 +167,12 @@ int process_float() {
     float float_num;
 
     float_num = strtof(yytext, &tmp_ptr);
-    if (strlen(tmp_ptr) == strlen(yytext))
-        return -1;
-    else if (float_num >  MAX_FLOAT)
-        return -2;
+    if (strlen(tmp_ptr) == strlen(yytext)) {
+        yERROR("Float Number error");
+    }
+    else if (float_num >  MAX_FLOAT) {
+        yERROR("Float number is greater than 1E37");
+    }
     yylval.as_float = float_num;
     return 0;
 }
