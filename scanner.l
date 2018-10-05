@@ -17,6 +17,7 @@
 
 void process_type();
 int process_float();
+int process_int();
 
 int CheckInt(void);
 int yyline = 1;
@@ -72,22 +73,23 @@ while           {yTRACE(WHILE); return WHILE;}
 {RX_FLOAT_TYPE} {yTRACE(FLOAT_TYPE); process_type();
                 return FLOAT_TYPE;}
 
-{RX_SCIENTIFIC} {int res = process_float();
+{RX_SCIENTIFIC} {yTRACE(TK_FLOAT);
+                  int res = process_float();
                   if (res == -1)
                     yERROR("Invalid float number");
                   if (res == -2)
                     yERROR("Float number is out of range");
-                 yTRACE(TK_FLOAT);
+
                  return (TK_FLOAT);}
 
 {RX_NUMBER_ERROR} {yERROR("Invalid number");}
 
-{RX_FLOAT}      {int res = process_float();
+{RX_FLOAT}      {yTRACE (TK_FLOAT);
+                 int res = process_float();
                  if (res == -1)
                     yERROR("Invalid float number");
                  if (res == -2)
                     yERROR("Float number is out of range");
-                 yTRACE (TK_FLOAT);
                  return (TK_FLOAT);}
 
 
@@ -95,8 +97,8 @@ const       {yTRACE (CONST_TYPE); return (CONST_TYPE);}
 
 {RX_ID}     {yTRACE (TK_ID); return (TK_ID);}
 
-{RX_INT}   {yylval.as_int = atoi(yytext);
-            yTRACE (TK_INT);
+{RX_INT}   {yTRACE (TK_INT);
+            process_int();
             return (TK_INT);}
 
 
@@ -185,4 +187,17 @@ int process_float() {
     return 0;
 }
 
+int process_int() {
+    char *tmp_ptr;
+    long int_num;
 
+    int_num = strtol(yytext, &tmp_ptr, 10);
+    if (strlen(tmp_ptr) == strlen(yytext)) {
+        yERROR("Integer Parse error");
+    }
+    else if (int_num > MAX_INTEGER) {
+        yERROR("Integer greater than 32767");
+    }
+    yylval.as_int = (int) int_num;
+
+}

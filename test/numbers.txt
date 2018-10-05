@@ -1,0 +1,2 @@
+/* float numbers */ 0.123 .123 1E37 1E-37 12.E5 13.1E5 /* Working errors: 1E38 0001.2 */
+/* int numbers */ 1  15  32767 -32767                       /* Working error: 0012 32768 */
