@@ -1,0 +1,7 @@
+{
+    bool a = true;
+    0AB;
+    14.88E5
+    A.*
+    0as32sdf
+}
