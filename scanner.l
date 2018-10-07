@@ -57,7 +57,6 @@ else                                { yTRACE(ELSE); return ELSE;}
 {RX_ENTER}                          {yyline++;}
 
 {RX_FUNC_NAMES}                     {yTRACE(FUNC_NAME); strncpy(yylval.func_name, yytext, 4) ;
-                                     printf("The input func name is %s\n", yylval.func_name);
                                      return (FUNC_NAME);}
 
 while                               {yTRACE(WHILE); return WHILE;}
@@ -79,6 +78,18 @@ while                               {yTRACE(WHILE); return WHILE;}
                                      process_float();
                                      return (TK_FLOAT);}
 
+{RX_FLOAT}                          {yTRACE (TK_FLOAT);
+                                     process_float();
+                                     return (TK_FLOAT);}
+
+{RX_ID}                             {yTRACE (TK_ID);
+                                     process_id();
+                                     return (TK_ID);}
+
+{RX_INT}                            {yTRACE (TK_INT);
+                                     process_int();
+                                     return (TK_INT);}
+
 {RX_NUMBER_ERROR}                   {yERROR("Invalid number");}
 
 ({RX_DIGIT}|{RX_FLOAT})E({RX_DIGIT}|{RX_FLOAT})   {//number error: 14.88E5 1E1.5
@@ -93,19 +104,8 @@ while                               {yTRACE(WHILE); return WHILE;}
 {RX_DIGIT}+{RX_CHAR}+               {//id error: 0AB
                                      yERROR("Invalid ID");}
 
-{RX_FLOAT}                          {yTRACE (TK_FLOAT);
-                                     process_float();
-                                     return (TK_FLOAT);}
-
 const                               {yTRACE (CONST_TYPE); return (CONST_TYPE);}
 
-{RX_ID}                             {yTRACE (TK_ID);
-                                     process_id();
-                                     return (TK_ID);}
-
-{RX_INT}                            {yTRACE (TK_INT);
-                                     process_int();
-                                     return (TK_INT);}
 
 "="                                 {yTRACE (EQ); return EQ;}
 
@@ -168,7 +168,7 @@ const                               {yTRACE (CONST_TYPE); return (CONST_TYPE);}
 
 int process_id(){
     if (strlen(yytext) > 32){
-        yERROR("Size of ID >= 32");
+        yERROR("Size of ID > 32");
     }
     return 0;
 }
