@@ -167,7 +167,7 @@ const                               {yTRACE (CONST_TYPE); return (CONST_TYPE);}
 %%
 
 int process_id(){
-    if (strlen(yytext) >= 32){
+    if (strlen(yytext) > 32){
         yERROR("Size of ID >= 32");
     }
     return 0;
