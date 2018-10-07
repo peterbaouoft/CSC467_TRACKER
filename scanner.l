@@ -18,6 +18,7 @@
 void process_type();
 int process_float();
 int process_int();
+int process_id();
 
 int CheckInt(void);
 int yyline = 1;
@@ -43,6 +44,7 @@ RX_FUNC_NAMES (lit|dp3|rsq)
 RX_INT_TYPE (int|ivec2|ivec3|ivec4)
 RX_BOOL_TYPE (bool|bvec2|bvec3|bvec4)
 RX_FLOAT_TYPE (float|vec2|vec3|vec4)
+
 RX_NUMBER_ERROR [0]{RX_INT}{RX_FLOAT}?
 
 %%
@@ -79,13 +81,27 @@ while                               {yTRACE(WHILE); return WHILE;}
 
 {RX_NUMBER_ERROR}                   {yERROR("Invalid number");}
 
+({RX_DIGIT}|{RX_FLOAT})E({RX_DIGIT}|{RX_FLOAT})   {//number error: 14.88E5 1E1.5
+                                                     yERROR("Invalid number");}
+
+{RX_DIGIT}+".-"({RX_DIGIT}|{RX_CHAR})+  {//number error: 12.-3
+                                         yERROR("Invalid number");}
+
+{RX_CHAR}+"."["+""-""*""/"]+        {//id error: A.*
+                                     yERROR("Invalid ID");}
+
+{RX_DIGIT}+{RX_CHAR}+               {//id error: 0AB
+                                     yERROR("Invalid ID");}
+
 {RX_FLOAT}                          {yTRACE (TK_FLOAT);
                                      process_float();
                                      return (TK_FLOAT);}
 
 const                               {yTRACE (CONST_TYPE); return (CONST_TYPE);}
 
-{RX_ID}                             {yTRACE (TK_ID); return (TK_ID);}
+{RX_ID}                             {yTRACE (TK_ID);
+                                     process_id();
+                                     return (TK_ID);}
 
 {RX_INT}                            {yTRACE (TK_INT);
                                      process_int();
@@ -149,6 +165,13 @@ const                               {yTRACE (CONST_TYPE); return (CONST_TYPE);}
 .                                   { yERROR("Unknown token"); }
 
 %%
+
+int process_id(){
+    if (strlen(yytext) >= 32){
+        yERROR("Size of ID >= 32");
+    }
+    return 0;
+}
 
 void process_type() {
     /* Put dimension into yylval using last character
