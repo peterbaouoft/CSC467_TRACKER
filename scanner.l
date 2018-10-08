@@ -212,5 +212,5 @@ int process_int() {
         yERROR("Integer greater than 32767");
     }
     yylval.as_int = (int) int_num;
-
+    return 0;
 }
