@@ -144,6 +144,53 @@ expression:
     | unary_op expression
     | expression binary_op expression
     | LEFT_PARENTHESIS expression RIGHT_PARENTHESIS
+  ;
+
+variable
+    :   ID
+    |   ID LEFT_BRACKET INT RIGHT_BRACKET
+    ;
+
+unary_op
+    :   NOT
+    |   MINUS
+    ;
+
+binary_op
+    :   AND
+    |   OR
+    |   DOUBLE_EQ
+    |   N_EQ
+    |   SMALLER
+    |   S_EQ
+    |   GREATER
+    |   G_EQ
+    |   PLUS
+    |   MINUS
+    |   TIMES
+    |   DIVIDE
+    |   CARET
+    ;
+
+construction
+    :   type LEFT_PARENTHESIS arguments RIGHT_PARENTHESIS
+    ;
+
+function
+    :   function_name LEFT_PARENTHESIS arguments_opt RIGHT_PARENTHESIS
+    ;
+
+function_name
+    :   FUNC_NAME
+    ;
+
+arguments_opt
+    :   arguments
+    ;
+
+arguments
+    :   arguments COMMA expression
+    |   expression
     ;
 
 %%
