@@ -99,21 +99,54 @@ extern int yyline;        /* variable holding current line number   */
  *    1. Add code to rules for construction of AST.
  ***********************************************************************/
 program
-  :   tokens
+  : scope
   ;
-tokens
-  :  tokens token
-  |
-  ;
-// TODO: replace myToken with the token the you defined.
-token
-  :     IF
-  |     ELSE
-  ;
-
+scope:
+    LEFT_CURLY declarations statements RIGHT_CURLY
+    ;
+declarations:
+    declarations declaration
+    |
+    ;
+statements:
+    statements statement
+    |
+    ;
+declaration:
+    type TK_ID SEMICOLON
+    | type TK_ID EQ expression SEMICOLON
+    | CONST_TYPE type TK_ID EQ expression SEMICOLON
+    |
+    ;
+statement:
+    variable EQ expression SEMICOLON
+    | IF LEFT_PARENTHESIS expression RIGHT_PARENTHESIS statement else_statement
+    | WHILE LEFT_PARENTHESIS expression RIGHT_PARENTHESIS statement
+    | scope
+    | SEMICOLON
+    ;
+else_statement:
+    ELSE statement
+    |
+    ;
+type:
+    INT_TYPE
+    | BOOL_TYPE
+    | FLOAT_TYPE
+    ;
+expression:
+    constructor
+    | function
+    | TK_INT
+    | TK_FLOAT
+    | TK_BOOL
+    | variable
+    | unary_op expression
+    | expression binary_op expression
+    | LEFT_PARENTHESIS expression RIGHT_PARENTHESIS
+    ;
 
 %%
-
 /***********************************************************************ol
  * Extra C code.
  *
