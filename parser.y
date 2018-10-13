@@ -172,7 +172,7 @@ binary_op
     |   CARET
     ;
 
-construction
+constructor
     :   type LEFT_PARENTHESIS arguments RIGHT_PARENTHESIS
     ;
 
