@@ -1,4 +1,8 @@
-# Roadmap
+# Lab 2 Roadmap
+Khoi:  
+Peter: 
+
+# Lab 1 Roadmap
 
 1: Identifiers, Keywords, Integers, Loops, Comments
     Khoi        Peter
