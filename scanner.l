@@ -62,8 +62,8 @@ else                                { yTRACE(ELSE); return ELSE;}
 while                               {yTRACE(WHILE); return WHILE;}
 
 {RX_BOOL}                           {yylval.as_bool = yytext;
-                                     yTRACE (TK_BOOL);
-                                     return (TK_BOOL);}
+                                     yTRACE (BOOL);
+                                     return (BOOL);}
 
 {RX_INT_TYPE}                       {yTRACE(INT_TYPE); process_type();
                                      return INT_TYPE;}
@@ -74,21 +74,21 @@ while                               {yTRACE(WHILE); return WHILE;}
 {RX_FLOAT_TYPE}                     {yTRACE(FLOAT_TYPE); process_type();
                                      return FLOAT_TYPE;}
 
-{RX_SCIENTIFIC}                     {yTRACE(TK_FLOAT);
+{RX_SCIENTIFIC}                     {yTRACE(FLOAT);
                                      process_float();
-                                     return (TK_FLOAT);}
+                                     return (FLOAT);}
 
-{RX_FLOAT}                          {yTRACE (TK_FLOAT);
+{RX_FLOAT}                          {yTRACE (FLOAT);
                                      process_float();
-                                     return (TK_FLOAT);}
+                                     return (FLOAT);}
 
-{RX_ID}                             {yTRACE (TK_ID);
+{RX_ID}                             {yTRACE (ID);
                                      process_id();
-                                     return (TK_ID);}
+                                     return (ID);}
 
-{RX_INT}                            {yTRACE (TK_INT);
+{RX_INT}                            {yTRACE (INT);
                                      process_int();
-                                     return (TK_INT);}
+                                     return (INT);}
 
 {RX_NUMBER_ERROR}                   {yERROR("Invalid number");}
 

@@ -61,12 +61,12 @@ extern int yyline;        /* variable holding current line number   */
         char func_name[3];
 }
 // TODO:Replace myToken with your tokens, you can use these tokens in flex
-%token TK_BOOL BOOL_TYPE
-%token TK_INT INT_TYPE
-%token TK_FLOAT FLOAT_TYPE
+%token BOOL BOOL_TYPE
+%token INT INT_TYPE
+%token FLOAT FLOAT_TYPE
 %token CONST_TYPE
 
-%token TK_ID
+%token ID
 
 /**********************************************************************
  *                           KEYWORDS
