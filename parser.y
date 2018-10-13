@@ -113,9 +113,9 @@ statements:
     |
     ;
 declaration:
-    type TK_ID SEMICOLON
-    | type TK_ID EQ expression SEMICOLON
-    | CONST_TYPE type TK_ID EQ expression SEMICOLON
+    type ID SEMICOLON
+    | type ID EQ expression SEMICOLON
+    | CONST_TYPE type ID EQ expression SEMICOLON
     |
     ;
 statement:
@@ -137,9 +137,9 @@ type:
 expression:
     constructor
     | function
-    | TK_INT
-    | TK_FLOAT
-    | TK_BOOL
+    | INT
+    | FLOAT
+    | BOOL
     | variable
     | unary_op expression
     | expression binary_op expression
