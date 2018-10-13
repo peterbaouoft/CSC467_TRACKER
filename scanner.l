@@ -78,19 +78,16 @@ while                               {yTRACE(WHILE); return WHILE;}
                                      process_float();
                                      return (FLOAT);}
 
+{RX_NUMBER_ERROR}                   {yERROR("Invalid number");}
+
 {RX_FLOAT}                          {yTRACE (FLOAT);
                                      process_float();
                                      return (FLOAT);}
-
-{RX_ID}                             {yTRACE (ID);
-                                     process_id();
-                                     return (ID);}
 
 {RX_INT}                            {yTRACE (INT);
                                      process_int();
                                      return (INT);}
 
-{RX_NUMBER_ERROR}                   {yERROR("Invalid number");}
 
 ({RX_DIGIT}|{RX_FLOAT})E({RX_DIGIT}|{RX_FLOAT})   {//number error: 14.88E5 1E1.5
                                                      yERROR("Invalid number");}
@@ -106,6 +103,9 @@ while                               {yTRACE(WHILE); return WHILE;}
 
 const                               {yTRACE (CONST_TYPE); return (CONST_TYPE);}
 
+{RX_ID}                             {yTRACE (ID);
+                                     process_id();
+                                     return (ID);}
 
 "="                                 {yTRACE (EQ); return EQ;}
 
