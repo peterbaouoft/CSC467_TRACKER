@@ -93,7 +93,7 @@ extern int yyline;        /* variable holding current line number   */
 %left       TIMES DIVIDE
 %right      CARET
 %left       UNARY
-%left       FUNCTION_CALL CONSTRUCTOR_CALL VECTOR_SUBSCRIPT
+%left       FUNCTION_CALL CONSTRUCTOR_CALL VECTOR_SUBSCRIPT /* define associativity for the brackets */
 
 %start    program
 
@@ -117,16 +117,16 @@ scope:
     ;
 declarations
     : declarations declaration                                                                                      {yTRACE("declarations: -> declarations declaration");}
-    |
+    |                                                                                                               {yTRACE("declarations: -> epislon");}
     ;
-statements:
-    statements statement                                                                                            {yTRACE("statements: -> statements statement");}
+statements
+    : statements statement                                                                                          {yTRACE("statements: -> statements statement");}
     |                                                                                                               {yTRACE("statements: -> epislon");}
     ;
 declaration
-    : type ID SEMICOLON                                                                                             {yTRACE("type ID SEMICOLON");}
-    | type ID EQ expression SEMICOLON                                                                               {yTRACE("type ID EQ expression SEMICOLON");}
-    | CONST_TYPE type ID EQ expression SEMICOLON                                                                    {yTRACE("CONST_TYPE type ID EQ expression SEMICOLON");}
+    : type ID SEMICOLON                                                                                             {yTRACE("declaration: -> type ID SEMICOLON");}
+    | type ID EQ expression SEMICOLON                                                                               {yTRACE("declaration: -> type ID EQ expression SEMICOLON");}
+    | CONST_TYPE type ID EQ expression SEMICOLON                                                                    {yTRACE("declaration: -> CONST_TYPE type ID EQ expression SEMICOLON");}
     ;
 statement
     : variable EQ expression SEMICOLON                                                                              {yTRACE("statement: -> variable EQ expression SEMICOLON");}
@@ -145,28 +145,28 @@ type
     | FLOAT_TYPE                                                                                                    {yTRACE("type: -> FLOAT_TYPE");}
     ;
 expression
-    : constructor
-    | function
-    | INT
-    | FLOAT
-    | BOOL
-    | variable
-    | NOT expression                                                                            %prec UNARY
-    | MINUS expression                                                                          %prec UNARY
-    | expression AND expression
-    | expression OR expression
-    | expression DOUBLE_EQ expression
-    | expression N_EQ expression
-    | expression SMALLER expression
-    | expression S_EQ expression
-    | expression GREATER expression
-    | expression G_EQ expression
-    | expression PLUS expression
-    | expression MINUS expression
-    | expression TIMES expression
-    | expression DIVIDE expression
-    | expression CARET expression
-    | LEFT_PARENTHESIS expression RIGHT_PARENTHESIS
+    : constructor                                                                                                   {yTRACE("expression: -> constructor");}
+    | function                                                                                                      {yTRACE("expression: -> function");}
+    | INT                                                                                                           {yTRACE("expression: -> INT");}
+    | FLOAT                                                                                                         {yTRACE("expression: -> FLOAT");}
+    | BOOL                                                                                                          {yTRACE("expression: -> BOOL");}
+    | variable                                                                                                      {yTRACE("expression: -> variable");}
+    | NOT expression                                                                            %prec UNARY         {yTRACE("expression: -> NOT expression");}
+    | MINUS expression                                                                          %prec UNARY         {yTRACE("expression: -> NEGATE expression");}
+    | expression AND expression                                                                                     {yTRACE("expression: -> expression AND expression");}
+    | expression OR expression                                                                                      {yTRACE("expression: -> expression OR expression");}
+    | expression DOUBLE_EQ expression                                                                               {yTRACE("expression: -> expression DOUBLE_EQ expression");}
+    | expression N_EQ expression                                                                                    {yTRACE("expression: -> expression N_EQ expression");}
+    | expression SMALLER expression                                                                                 {yTRACE("expression: -> expression SMALLER expression");}
+    | expression S_EQ expression                                                                                    {yTRACE("expression: -> expression S_EQ expression");}
+    | expression GREATER expression                                                                                 {yTRACE("expression: -> expression GREATER expression");}
+    | expression G_EQ expression                                                                                    {yTRACE("expression: -> expression G_EQ expression");}
+    | expression PLUS expression                                                                                    {yTRACE("expression: -> expression PLUS expression");}
+    | expression MINUS expression                                                                                   {yTRACE("expression: -> expression MINUS expression");}
+    | expression TIMES expression                                                                                   {yTRACE("expression: -> expression TIMES experssion");}
+    | expression DIVIDE expression                                                                                  {yTRACE("expression: -> expression DIVIDE expression");}
+    | expression CARET expression                                                                                   {yTRACE("expression: -> expression CARET expression");}
+    | LEFT_PARENTHESIS expression RIGHT_PARENTHESIS                                                                 {yTRACE("expression: -> LEFT_PARENTHESIS expression RIGHT_PARENTHESIS");}
     ;
 
 variable
@@ -183,7 +183,7 @@ function
     ;
 
 function_name
-    : FUNC_NAME                                                                                                     {yTRACE("function_name: -> FUNC_NAME");}
+    : FUNC_NAME                                                                                                     {yTRACE("function_name: -> ('dp3'|'lit'|'rsq')");}
     ;
 
 arguments_opt
