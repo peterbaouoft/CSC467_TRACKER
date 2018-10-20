@@ -1,0 +1,13 @@
+{
+    /* boolean */
+    bool b = true;
+    bvec2 bv = bvec2(true, false);
+    
+    /* int */
+    int num;
+    num = 0;
+    
+    /* float */
+    vec2 myVec = vec2(1.0, 5.0);
+     
+}
