@@ -99,27 +99,26 @@ extern int yyline;        /* variable holding current line number   */
  *    1. Add code to rules for construction of AST.
  ***********************************************************************/
 program
-  : scope
+  : scope                                                                                                           {yTRACE("scope");}
   ;
 scope:
-    LEFT_CURLY declarations statements RIGHT_CURLY
+    LEFT_CURLY declarations statements RIGHT_CURLY                                                                  {yTRACE("LEFT_CURLY declarations statements RIGHT_CURLY");}
     ;
 declarations:
-    declarations declaration
+    declarations declaration                                                                                        {yTRACE("declarations declaration");}
     |
     ;
 statements:
-    statements statement
+    statements statement                                                                                            {yTRACE("statements statement");}
     |
     ;
 declaration:
-    type ID SEMICOLON
-    | type ID EQ expression SEMICOLON
+    type ID SEMICOLON                                                                                               {yTRACE("type ID SEMICOLON");}
+    | type ID EQ expression SEMICOLON                                                                               {yTRACE("type ID EQ expression SEMICOLON");}
     | CONST_TYPE type ID EQ expression SEMICOLON
-    |
     ;
 statement:
-    variable EQ expression SEMICOLON
+    variable EQ expression SEMICOLON                                                                                {yTRACE("variable EQ expression SEMICOLON");}
     | IF LEFT_PARENTHESIS expression RIGHT_PARENTHESIS statement else_statement
     | WHILE LEFT_PARENTHESIS expression RIGHT_PARENTHESIS statement
     | scope
@@ -141,35 +140,27 @@ expression:
     | FLOAT
     | BOOL
     | variable
-    | unary_op expression
-    | expression binary_op expression
+    | NOT expression
+    | MINUS expression
+    | expression AND expression
+    | expression OR expression
+    | expression DOUBLE_EQ expression
+    | expression N_EQ expression
+    | expression SMALLER expression
+    | expression S_EQ expression
+    | expression GREATER expression
+    | expression G_EQ expression
+    | expression PLUS expression
+    | expression MINUS expression
+    | expression TIMES expression
+    | expression DIVIDE expression
+    | expression CARET expression
     | LEFT_PARENTHESIS expression RIGHT_PARENTHESIS
-  ;
+    ;
 
 variable
     :   ID
     |   ID LEFT_BRACKET INT RIGHT_BRACKET
-    ;
-
-unary_op
-    :   NOT
-    |   MINUS
-    ;
-
-binary_op
-    :   AND
-    |   OR
-    |   DOUBLE_EQ
-    |   N_EQ
-    |   SMALLER
-    |   S_EQ
-    |   GREATER
-    |   G_EQ
-    |   PLUS
-    |   MINUS
-    |   TIMES
-    |   DIVIDE
-    |   CARET
     ;
 
 constructor
