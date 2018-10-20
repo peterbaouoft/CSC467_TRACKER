@@ -110,49 +110,49 @@ extern int yyline;        /* variable holding current line number   */
  *    1. Add code to rules for construction of AST.
  ***********************************************************************/
 program
-  : scope                                                                                                           {yTRACE("scope");}
+  : scope                                                                                                           {yTRACE("program: -> scope");}
   ;
 scope:
-    LEFT_CURLY declarations statements RIGHT_CURLY                                                                  {yTRACE("LEFT_CURLY declarations statements RIGHT_CURLY");}
+    LEFT_CURLY declarations statements RIGHT_CURLY                                                                  {yTRACE("scope: -> LEFT_CURLY declarations statements RIGHT_CURLY");}
     ;
-declarations:
-    declarations declaration                                                                                        {yTRACE("declarations declaration");}
+declarations
+    : declarations declaration                                                                                      {yTRACE("declarations: -> declarations declaration");}
     |
     ;
 statements:
-    statements statement                                                                                            {yTRACE("statements statement");}
-    |
+    statements statement                                                                                            {yTRACE("statements: -> statements statement");}
+    |                                                                                                               {yTRACE("statements: -> epislon");}
     ;
-declaration:
-    type ID SEMICOLON                                                                                               {yTRACE("type ID SEMICOLON");}
+declaration
+    : type ID SEMICOLON                                                                                             {yTRACE("type ID SEMICOLON");}
     | type ID EQ expression SEMICOLON                                                                               {yTRACE("type ID EQ expression SEMICOLON");}
-    | CONST_TYPE type ID EQ expression SEMICOLON
+    | CONST_TYPE type ID EQ expression SEMICOLON                                                                    {yTRACE("CONST_TYPE type ID EQ expression SEMICOLON");}
     ;
-statement:
-    variable EQ expression SEMICOLON                                                                                {yTRACE("variable EQ expression SEMICOLON");}
-    | IF LEFT_PARENTHESIS expression RIGHT_PARENTHESIS statement else_statement
-    | WHILE LEFT_PARENTHESIS expression RIGHT_PARENTHESIS statement
-    | scope
-    | SEMICOLON
+statement
+    : variable EQ expression SEMICOLON                                                                              {yTRACE("statement: -> variable EQ expression SEMICOLON");}
+    | IF LEFT_PARENTHESIS expression RIGHT_PARENTHESIS statement else_statement                                     {yTRACE("statement: -> IF LEFT_PARENTHESIS expression RIGHT_PARENTHESIS statement else_statement");}
+    | WHILE LEFT_PARENTHESIS expression RIGHT_PARENTHESIS statement                             %prec FUNCTION_CALL {yTRACE("statement: -> WHILE LEFT_PARENTHESIS expression RIGHT_PARENTHESIS statement");}
+    | scope                                                                                                         {yTRACE("statement: -> scope");}
+    | SEMICOLON                                                                                                     {yTRACE("statement: -> SEMICOLON");}
     ;
-else_statement:
-    ELSE statement
-    |
+else_statement
+    : ELSE statement                                                                                                {yTRACE("statement: -> ELSE statement");}
+    |                                                                                                               {yTRACE("statement: -> epislon");}
     ;
-type:
-    INT_TYPE
-    | BOOL_TYPE
-    | FLOAT_TYPE
+type
+    : INT_TYPE                                                                                                      {yTRACE("type: -> INT_TYPE");}
+    | BOOL_TYPE                                                                                                     {yTRACE("type: -> BOOL_TYPE");}
+    | FLOAT_TYPE                                                                                                    {yTRACE("type: -> FLOAT_TYPE");}
     ;
-expression:
-    constructor
+expression
+    : constructor
     | function
     | INT
     | FLOAT
     | BOOL
     | variable
-    | NOT expression
-    | MINUS expression
+    | NOT expression                                                                            %prec UNARY
+    | MINUS expression                                                                          %prec UNARY
     | expression AND expression
     | expression OR expression
     | expression DOUBLE_EQ expression
@@ -170,29 +170,29 @@ expression:
     ;
 
 variable
-    :   ID
-    |   ID LEFT_BRACKET INT RIGHT_BRACKET
+    : ID                                                                                                            {yTRACE("variable: -> ID");}
+    | ID LEFT_BRACKET INT RIGHT_BRACKET                                                     %prec VECTOR_SUBSCRIPT  {yTRACE("variable: -> ID LEFT_BRACKET INT RIGHT_BRACKET");}
     ;
 
 constructor
-    :   type LEFT_PARENTHESIS arguments RIGHT_PARENTHESIS
+    : type LEFT_PARENTHESIS arguments RIGHT_PARENTHESIS                                     %prec CONSTRUCTOR_CALL  {yTRACE("constuctor: ->  type LEFT_PARENTHESIS arguments RIGHT_PARENTHEIS");}
     ;
 
 function
-    :   function_name LEFT_PARENTHESIS arguments_opt RIGHT_PARENTHESIS
+    : function_name LEFT_PARENTHESIS arguments_opt RIGHT_PARENTHESIS                        %prec FUNCTION_CALL     {yTRACE("function: -> function_name LEFT_PARENTHESIS arguments_opt RIGHT_PARENTHESIS");}
     ;
 
 function_name
-    :   FUNC_NAME
+    : FUNC_NAME                                                                                                     {yTRACE("function_name: -> FUNC_NAME");}
     ;
 
 arguments_opt
-    :   arguments
+    : arguments                                                                                                     {yTRACE("arguments_opt: -> arguments");}
     ;
 
 arguments
-    :   arguments COMMA expression
-    |   expression
+    : arguments COMMA expression                                                                                    {yTRACE("arguments: -> arguments COMMA expression");}
+    | expression                                                                                                    {yTRACE("arguments: -> expression");}
     ;
 
 %%
