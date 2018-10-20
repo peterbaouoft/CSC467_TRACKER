@@ -1,0 +1,13 @@
+declarations: -> epislon
+statements: -> epislon
+variable: -> ID
+expression: -> variable
+statement: -> SEMICOLON
+variable: -> ID
+expression: -> INT
+statement: -> variable EQ expression SEMICOLON
+statement: -> ELSE statement
+statement: -> IF LEFT_PARENTHESIS expression RIGHT_PARENTHESIS statement else_statement
+statements: -> statements statement
+scope: -> LEFT_CURLY declarations statements RIGHT_CURLY
+program: -> scope

@@ -188,6 +188,7 @@ function_name
 
 arguments_opt
     : arguments                                                                                                     {yTRACE("arguments_opt: -> arguments");}
+    |                                                                                                               {yTRACE("arguments_opt: -> epislon");}
     ;
 
 arguments

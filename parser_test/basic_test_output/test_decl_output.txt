@@ -1,0 +1,15 @@
+declarations: -> epislon
+type: -> INT_TYPE
+declaration: -> type ID SEMICOLON
+declarations: -> declarations declaration
+type: -> INT_TYPE
+expression: -> INT
+declaration: -> type ID EQ expression SEMICOLON
+declarations: -> declarations declaration
+type: -> FLOAT_TYPE
+expression: -> FLOAT
+declaration: -> CONST_TYPE type ID EQ expression SEMICOLON
+declarations: -> declarations declaration
+statements: -> epislon
+scope: -> LEFT_CURLY declarations statements RIGHT_CURLY
+program: -> scope
