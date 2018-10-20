@@ -73,9 +73,10 @@ int main (int argc, char *argv[]) {
 
 /* Phase 1: Scanner. In phase 2 and after the following code should be
  * removed */
-  while (yylex())
+  /* while (yylex())
     if (errorOccurred)
       break;
+  */
 
 /* Phase 2: Parser -- should allocate an AST, storing the reference in the
  * global variable "ast", and build the AST there. */
