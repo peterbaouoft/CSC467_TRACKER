@@ -85,7 +85,18 @@ extern int yyline;        /* variable holding current line number   */
 %token COMMA SEMICOLON
 %token FUNC_NAME LEFT_CURLY RIGHT_CURLY WHILE
 
+/* The lower the precedence, the higher the priority is */
+%left       OR
+%left       AND
+%left       PLUS MINUS/* We did something special here, for every minus, we replace it with + (-number) */
+%nonassoc   DOUBLE_EQ N_EQ GREATER SMALLER S_EQ G_EQ EQ /* No associativity */
+%left       TIMES DIVIDE
+%right      CARET
+%left       UNARY
+%left       FUNCTION_CALL CONSTRUCTOR_CALL VECTOR_SUBSCRIPT
+
 %start    program
+
 
 %%
 
