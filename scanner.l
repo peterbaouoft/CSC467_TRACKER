@@ -34,8 +34,10 @@ RX_BOOL  (true|false)
 
 RX_DIGIT [0-9]
 RX_INT   {RX_DIGIT}+
-RX_FLOAT {RX_INT}?"."{RX_SCIENTIFIC}?[eE]?{RX_DIGIT}*
+RX_FLOAT [0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?
+RX_FLOAT_TEMP {RX_INT}?"."{RX_SCIENTIFIC}?[eE]?{RX_DIGIT}*
 RX_SCIENTIFIC {RX_DIGIT}[eE][-]?{RX_INT}
+
 
 RX_CHAR [a-zA-Z_]
 RX_ID   [A-Za-z_][A-Za-z0-9_]*
@@ -61,7 +63,7 @@ else                                { yTRACE(ELSE); return ELSE;}
 
 while                               {yTRACE(WHILE); return WHILE;}
 
-{RX_BOOL}                           {yylval.as_bool = yytext;
+{RX_BOOL}                           {yylval.as_bool = (strcmp(yytext, "true") == 0) ? true : false;
                                      yTRACE (BOOL);
                                      return (BOOL);}
 
@@ -89,8 +91,8 @@ while                               {yTRACE(WHILE); return WHILE;}
                                      return (INT);}
 
 
-({RX_DIGIT}|{RX_FLOAT})E({RX_DIGIT}|{RX_FLOAT})   {//number error: 14.88E5 1E1.5
-                                                     yERROR("Invalid number");}
+({RX_DIGIT})E({RX_DIGIT}|{RX_FLOAT})   {//number error: 1E1.5
+                                        yERROR("Invalid number");}
 
 {RX_DIGIT}+".-"({RX_DIGIT}|{RX_CHAR})+  {//number error: 12.-3
                                          yERROR("Invalid number");}
