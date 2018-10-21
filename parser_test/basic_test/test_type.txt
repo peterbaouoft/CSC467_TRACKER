@@ -1,0 +1,16 @@
+{
+    bool b;
+    bvec2 b2;
+    bvec3 b3;
+    bvec4 b4;
+
+    int i;
+    ivec2 i2;
+    ivec3 i3;
+    ivec4 i4;
+
+    float f;
+    vec2 f2;
+    vec3 f3;
+    vec4 f4;
+}

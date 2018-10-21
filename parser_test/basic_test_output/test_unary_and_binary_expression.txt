@@ -1,0 +1,10 @@
+declarations: -> epislon
+type: -> INT_TYPE
+declaration: -> type ID SEMICOLON
+declarations: -> declarations declaration
+statements: -> epislon
+variable: -> ID
+expression: -> INT
+expression: -> NEGATE expression
+statement: -> variable EQ expression SEMICOLON
+statements: -> statements statement

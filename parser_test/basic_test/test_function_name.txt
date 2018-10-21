@@ -1,0 +1,11 @@
+{
+    vec4 v4 = vec4(0.5, 1.5, 2.5, 3.5);
+    vec4 v4_2 = lit(v4);
+
+    vec3 v3 = vec3(0.2, 1.2, 2.2);
+    vec3 v3_2 = vec3(0.1, 1.1, 2.1);
+    float f = dp3(v4, v4_2);
+    float f2= dp3(v3, v3_2);
+
+    float f3 = rsq(f2);
+}

@@ -1,0 +1,57 @@
+declarations: -> epislon
+type: -> FLOAT_TYPE
+expression: -> INT
+expression: -> INT
+expression: -> expression TIMES experssion
+expression: -> INT
+expression: -> expression TIMES experssion
+declaration: -> type ID EQ expression SEMICOLON
+declarations: -> declarations declaration
+statements: -> epislon
+variable: -> ID
+expression: -> INT
+expression: -> INT
+expression: -> expression DIVIDE expression
+expression: -> INT
+expression: -> expression DIVIDE expression
+statement: -> variable EQ expression SEMICOLON
+statements: -> statements statement
+variable: -> ID
+expression: -> INT
+expression: -> INT
+expression: -> expression PLUS expression
+expression: -> INT
+expression: -> expression PLUS expression
+statement: -> variable EQ expression SEMICOLON
+statements: -> statements statement
+variable: -> ID
+expression: -> INT
+expression: -> NEGATE expression
+expression: -> INT
+expression: -> expression MINUS expression
+statement: -> variable EQ expression SEMICOLON
+statements: -> statements statement
+variable: -> ID
+expression: -> INT
+expression: -> INT
+expression: -> expression AND expression
+expression: -> INT
+expression: -> expression AND expression
+statement: -> variable EQ expression SEMICOLON
+statements: -> statements statement
+variable: -> ID
+expression: -> INT
+expression: -> INT
+expression: -> expression OR expression
+expression: -> INT
+expression: -> expression OR expression
+statement: -> variable EQ expression SEMICOLON
+statements: -> statements statement
+variable: -> ID
+expression: -> INT
+expression: -> INT
+expression: -> INT
+expression: -> expression CARET expression
+expression: -> expression CARET expression
+statement: -> variable EQ expression SEMICOLON
+statements: -> statements statement
