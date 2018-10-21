@@ -34,7 +34,7 @@ RX_BOOL  (true|false)
 
 RX_DIGIT [0-9]
 RX_INT   {RX_DIGIT}+
-RX_FLOAT [0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?
+RX_FLOAT [0-9]*\.[0-9]+([eE][-+]?[0-9]+)?
 RX_FLOAT_TEMP {RX_INT}?"."{RX_SCIENTIFIC}?[eE]?{RX_DIGIT}*
 RX_SCIENTIFIC {RX_DIGIT}[eE][-]?{RX_INT}
 
