@@ -1,11 +1,11 @@
 {
     int i;
+    float f;
+    bool b;
     i = -2;
     
-    bool b;
     b = !true;
 
-    float f;
     f = -3.6435;
 
     b = (0==0) && (true||false);
@@ -18,11 +18,11 @@
         f = 1.23;
     }
 
-    f > 2;
-    f < 2;
+    b = f > 2;
+    b = f < 2;
     f = i + 23;
     f = i - 2;
     f = i * 3;
     f = i / 3;
-    f >= 4;
+    b = f >= 4;
 }

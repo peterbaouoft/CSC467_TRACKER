@@ -1,0 +1,40 @@
+declarations: -> epislon
+type: -> BOOL_TYPE
+declaration: -> type ID SEMICOLON
+declarations: -> declarations declaration
+type: -> BOOL_TYPE
+declaration: -> type ID SEMICOLON
+declarations: -> declarations declaration
+type: -> BOOL_TYPE
+declaration: -> type ID SEMICOLON
+declarations: -> declarations declaration
+type: -> BOOL_TYPE
+declaration: -> type ID SEMICOLON
+declarations: -> declarations declaration
+type: -> INT_TYPE
+declaration: -> type ID SEMICOLON
+declarations: -> declarations declaration
+type: -> INT_TYPE
+declaration: -> type ID SEMICOLON
+declarations: -> declarations declaration
+type: -> INT_TYPE
+declaration: -> type ID SEMICOLON
+declarations: -> declarations declaration
+type: -> INT_TYPE
+declaration: -> type ID SEMICOLON
+declarations: -> declarations declaration
+type: -> FLOAT_TYPE
+declaration: -> type ID SEMICOLON
+declarations: -> declarations declaration
+type: -> FLOAT_TYPE
+declaration: -> type ID SEMICOLON
+declarations: -> declarations declaration
+type: -> FLOAT_TYPE
+declaration: -> type ID SEMICOLON
+declarations: -> declarations declaration
+type: -> FLOAT_TYPE
+declaration: -> type ID SEMICOLON
+declarations: -> declarations declaration
+statements: -> epislon
+scope: -> LEFT_CURLY declarations statements RIGHT_CURLY
+program: -> scope

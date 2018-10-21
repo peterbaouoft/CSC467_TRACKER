@@ -7,6 +7,40 @@ expression: -> INT
 expression: -> expression TIMES experssion
 declaration: -> type ID EQ expression SEMICOLON
 declarations: -> declarations declaration
+type: -> FLOAT_TYPE
+type: -> FLOAT_TYPE
+expression: -> INT
+arguments: -> expression
+expression: -> INT
+arguments: -> arguments COMMA expression
+constuctor: ->  type LEFT_PARENTHESIS arguments RIGHT_PARENTHEIS
+expression: -> constructor
+declaration: -> type ID EQ expression SEMICOLON
+declarations: -> declarations declaration
+type: -> FLOAT_TYPE
+type: -> FLOAT_TYPE
+expression: -> INT
+arguments: -> expression
+expression: -> INT
+arguments: -> arguments COMMA expression
+expression: -> INT
+arguments: -> arguments COMMA expression
+constuctor: ->  type LEFT_PARENTHESIS arguments RIGHT_PARENTHEIS
+expression: -> constructor
+declaration: -> type ID EQ expression SEMICOLON
+declarations: -> declarations declaration
+type: -> FLOAT_TYPE
+variable: -> ID LEFT_BRACKET INT RIGHT_BRACKET
+expression: -> variable
+expression: -> INT
+expression: -> expression TIMES experssion
+expression: -> INT
+expression: -> expression TIMES experssion
+declaration: -> type ID EQ expression SEMICOLON
+declarations: -> declarations declaration
+type: -> INT_TYPE
+declaration: -> type ID SEMICOLON
+declarations: -> declarations declaration
 statements: -> epislon
 variable: -> ID
 expression: -> INT
@@ -55,3 +89,22 @@ expression: -> expression CARET expression
 expression: -> expression CARET expression
 statement: -> variable EQ expression SEMICOLON
 statements: -> statements statement
+variable: -> ID
+expression: -> INT
+expression: -> NOT expression
+expression: -> INT
+expression: -> INT
+expression: -> expression CARET expression
+expression: -> expression TIMES experssion
+expression: -> INT
+expression: -> expression PLUS expression
+expression: -> INT
+expression: -> expression MINUS expression
+expression: -> INT
+expression: -> expression AND expression
+expression: -> INT
+expression: -> expression OR expression
+statement: -> variable EQ expression SEMICOLON
+statements: -> statements statement
+scope: -> LEFT_CURLY declarations statements RIGHT_CURLY
+program: -> scope

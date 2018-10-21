@@ -1,0 +1,88 @@
+declarations: -> epislon
+type: -> FLOAT_TYPE
+type: -> FLOAT_TYPE
+expression: -> FLOAT
+arguments: -> expression
+expression: -> FLOAT
+arguments: -> arguments COMMA expression
+expression: -> FLOAT
+arguments: -> arguments COMMA expression
+expression: -> FLOAT
+arguments: -> arguments COMMA expression
+constuctor: ->  type LEFT_PARENTHESIS arguments RIGHT_PARENTHEIS
+expression: -> constructor
+declaration: -> type ID EQ expression SEMICOLON
+declarations: -> declarations declaration
+type: -> FLOAT_TYPE
+function_name: -> ('dp3'|'lit'|'rsq')
+variable: -> ID
+expression: -> variable
+arguments: -> expression
+arguments_opt: -> arguments
+function: -> function_name LEFT_PARENTHESIS arguments_opt RIGHT_PARENTHESIS
+expression: -> function
+declaration: -> type ID EQ expression SEMICOLON
+declarations: -> declarations declaration
+type: -> FLOAT_TYPE
+type: -> FLOAT_TYPE
+expression: -> FLOAT
+arguments: -> expression
+expression: -> FLOAT
+arguments: -> arguments COMMA expression
+expression: -> FLOAT
+arguments: -> arguments COMMA expression
+constuctor: ->  type LEFT_PARENTHESIS arguments RIGHT_PARENTHEIS
+expression: -> constructor
+declaration: -> type ID EQ expression SEMICOLON
+declarations: -> declarations declaration
+type: -> FLOAT_TYPE
+type: -> FLOAT_TYPE
+expression: -> FLOAT
+arguments: -> expression
+expression: -> FLOAT
+arguments: -> arguments COMMA expression
+expression: -> FLOAT
+arguments: -> arguments COMMA expression
+constuctor: ->  type LEFT_PARENTHESIS arguments RIGHT_PARENTHEIS
+expression: -> constructor
+declaration: -> type ID EQ expression SEMICOLON
+declarations: -> declarations declaration
+type: -> FLOAT_TYPE
+function_name: -> ('dp3'|'lit'|'rsq')
+variable: -> ID
+expression: -> variable
+arguments: -> expression
+variable: -> ID
+expression: -> variable
+arguments: -> arguments COMMA expression
+arguments_opt: -> arguments
+function: -> function_name LEFT_PARENTHESIS arguments_opt RIGHT_PARENTHESIS
+expression: -> function
+declaration: -> type ID EQ expression SEMICOLON
+declarations: -> declarations declaration
+type: -> FLOAT_TYPE
+function_name: -> ('dp3'|'lit'|'rsq')
+variable: -> ID
+expression: -> variable
+arguments: -> expression
+variable: -> ID
+expression: -> variable
+arguments: -> arguments COMMA expression
+arguments_opt: -> arguments
+function: -> function_name LEFT_PARENTHESIS arguments_opt RIGHT_PARENTHESIS
+expression: -> function
+declaration: -> type ID EQ expression SEMICOLON
+declarations: -> declarations declaration
+type: -> FLOAT_TYPE
+function_name: -> ('dp3'|'lit'|'rsq')
+variable: -> ID
+expression: -> variable
+arguments: -> expression
+arguments_opt: -> arguments
+function: -> function_name LEFT_PARENTHESIS arguments_opt RIGHT_PARENTHESIS
+expression: -> function
+declaration: -> type ID EQ expression SEMICOLON
+declarations: -> declarations declaration
+statements: -> epislon
+scope: -> LEFT_CURLY declarations statements RIGHT_CURLY
+program: -> scope

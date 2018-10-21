@@ -1,0 +1,120 @@
+declarations: -> epislon
+type: -> INT_TYPE
+declaration: -> type ID SEMICOLON
+declarations: -> declarations declaration
+type: -> FLOAT_TYPE
+declaration: -> type ID SEMICOLON
+declarations: -> declarations declaration
+type: -> BOOL_TYPE
+declaration: -> type ID SEMICOLON
+declarations: -> declarations declaration
+statements: -> epislon
+variable: -> ID
+expression: -> INT
+expression: -> NEGATE expression
+statement: -> variable EQ expression SEMICOLON
+statements: -> statements statement
+variable: -> ID
+expression: -> BOOL
+expression: -> NOT expression
+statement: -> variable EQ expression SEMICOLON
+statements: -> statements statement
+variable: -> ID
+expression: -> FLOAT
+expression: -> NEGATE expression
+statement: -> variable EQ expression SEMICOLON
+statements: -> statements statement
+variable: -> ID
+expression: -> INT
+expression: -> INT
+expression: -> expression DOUBLE_EQ expression
+expression: -> LEFT_PARENTHESIS expression RIGHT_PARENTHESIS
+expression: -> BOOL
+expression: -> BOOL
+expression: -> expression OR expression
+expression: -> LEFT_PARENTHESIS expression RIGHT_PARENTHESIS
+expression: -> expression AND expression
+statement: -> variable EQ expression SEMICOLON
+statements: -> statements statement
+variable: -> ID
+expression: -> variable
+expression: -> BOOL
+expression: -> expression N_EQ expression
+declarations: -> epislon
+statements: -> epislon
+variable: -> ID
+expression: -> INT
+statement: -> variable EQ expression SEMICOLON
+statements: -> statements statement
+scope: -> LEFT_CURLY declarations statements RIGHT_CURLY
+statement: -> scope
+statement: -> epislon
+statement: -> IF LEFT_PARENTHESIS expression RIGHT_PARENTHESIS statement else_statement
+statements: -> statements statement
+variable: -> ID
+expression: -> variable
+expression: -> INT
+expression: -> NEGATE expression
+expression: -> expression S_EQ expression
+declarations: -> epislon
+statements: -> epislon
+variable: -> ID
+expression: -> FLOAT
+statement: -> variable EQ expression SEMICOLON
+statements: -> statements statement
+scope: -> LEFT_CURLY declarations statements RIGHT_CURLY
+statement: -> scope
+statement: -> epislon
+statement: -> IF LEFT_PARENTHESIS expression RIGHT_PARENTHESIS statement else_statement
+statements: -> statements statement
+variable: -> ID
+variable: -> ID
+expression: -> variable
+expression: -> INT
+expression: -> expression GREATER expression
+statement: -> variable EQ expression SEMICOLON
+statements: -> statements statement
+variable: -> ID
+variable: -> ID
+expression: -> variable
+expression: -> INT
+expression: -> expression SMALLER expression
+statement: -> variable EQ expression SEMICOLON
+statements: -> statements statement
+variable: -> ID
+variable: -> ID
+expression: -> variable
+expression: -> INT
+expression: -> expression PLUS expression
+statement: -> variable EQ expression SEMICOLON
+statements: -> statements statement
+variable: -> ID
+variable: -> ID
+expression: -> variable
+expression: -> INT
+expression: -> expression MINUS expression
+statement: -> variable EQ expression SEMICOLON
+statements: -> statements statement
+variable: -> ID
+variable: -> ID
+expression: -> variable
+expression: -> INT
+expression: -> expression TIMES experssion
+statement: -> variable EQ expression SEMICOLON
+statements: -> statements statement
+variable: -> ID
+variable: -> ID
+expression: -> variable
+expression: -> INT
+expression: -> expression DIVIDE expression
+statement: -> variable EQ expression SEMICOLON
+statements: -> statements statement
+variable: -> ID
+variable: -> ID
+expression: -> variable
+expression: -> INT
+expression: -> expression G_EQ expression
+statement: -> variable EQ expression SEMICOLON
+statements: -> statements statement
+scope: -> LEFT_CURLY declarations statements RIGHT_CURLY
+program: -> scope
