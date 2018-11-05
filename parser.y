@@ -48,18 +48,30 @@ extern int yyline;        /* variable holding current line number   */
 #define YYDEBUG 1
 %}
 
-
 // TODO:Modify me to add more data types
 // Can access me from flex useing yyval
 
 %union {
-	bool as_bool;
-	int as_int;
-	float as_float;
+    bool as_bool;
+    int as_int;
+    float as_float;
 
-        int vec_dimension;
-        char func_name[3];
+    int vec_dimension;
+    char func_name[3];
+
+    Node* as_node; /* this field is only used for AST */
 }
+
+/*********************************************************************
+ *                          TYPE DECLARATION                         *
+*********************************************************************/
+%type <as_node> scope
+%type <as_node> declarations
+%type <as_node> declaration
+%type <as_node> type
+%type <as_node> ID
+
+
 // TODO:Replace myToken with your tokens, you can use these tokens in flex
 %token BOOL BOOL_TYPE
 %token INT INT_TYPE
@@ -110,21 +122,26 @@ extern int yyline;        /* variable holding current line number   */
  *    1. Add code to rules for construction of AST.
  ***********************************************************************/
 program
-  : scope                                                                                                           {yTRACE("program: -> scope");}
+  : scope                                                                                                           { ast = $1;
+                                                                                                                     yTRACE("program: -> scope");}
   ;
 scope:
-    LEFT_CURLY declarations statements RIGHT_CURLY                                                                  {yTRACE("scope: -> LEFT_CURLY declarations statements RIGHT_CURLY");}
+    LEFT_CURLY declarations statements RIGHT_CURLY                                                                  { $$ = ast_allocate(SCOPE_NODE, $2);
+                                                                                                                     yTRACE("scope: -> LEFT_CURLY declarations statements RIGHT_CURLY");}
     ;
 declarations
-    : declarations declaration                                                                                      {yTRACE("declarations: -> declarations declaration");}
-    |                                                                                                               {yTRACE("declarations: -> epislon");}
+    : declarations declaration                                                                                      {$$ = ast_allocate(DECLARATIONS_NODE, $1, $2);
+                                                                                                                     yTRACE("declarations: -> declarations declaration");}
+    |                                                                                                               {$$ = ast_allocate(DECLARATIONS_NODE, NULL, NULL);
+                                                                                                                      yTRACE("declarations: -> epislon");}
     ;
 statements
     : statements statement                                                                                          {yTRACE("statements: -> statements statement");}
     |                                                                                                               {yTRACE("statements: -> epislon");}
     ;
 declaration
-    : type ID SEMICOLON                                                                                             {yTRACE("declaration: -> type ID SEMICOLON");}
+    : type ID SEMICOLON                                                                                             {$$ = ast_allocate($1, $2);
+                                                                                                                     yTRACE("declaration: -> type ID SEMICOLON");}
     | type ID EQ expression SEMICOLON                                                                               {yTRACE("declaration: -> type ID EQ expression SEMICOLON");}
     | CONST_TYPE type ID EQ expression SEMICOLON                                                                    {yTRACE("declaration: -> CONST_TYPE type ID EQ expression SEMICOLON");}
     ;
@@ -140,9 +157,12 @@ else_statement
     |                                                                                                               {yTRACE("statement: -> epislon");}
     ;
 type
-    : INT_TYPE                                                                                                      {yTRACE("type: -> INT_TYPE");}
-    | BOOL_TYPE                                                                                                     {yTRACE("type: -> BOOL_TYPE");}
-    | FLOAT_TYPE                                                                                                    {yTRACE("type: -> FLOAT_TYPE");}
+    : INT_TYPE                                                                                                      {$$ = ast_allocate(0, yylval.vec_dimension);
+                                                                                                                     yTRACE("type: -> INT_TYPE");}
+    | BOOL_TYPE                                                                                                     {$$ = ast_allocate(1, yylval.vec_dimension);
+                                                                                                                     yTRACE("type: -> BOOL_TYPE");}
+    | FLOAT_TYPE                                                                                                    {$$ = ast_allocate(2, yylval.vec_dimension);
+                                                                                                                     yTRACE("type: -> FLOAT_TYPE");}
     ;
 expression
     : constructor                                                                                                   {yTRACE("expression: -> constructor");}
