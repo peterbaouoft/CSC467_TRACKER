@@ -16,7 +16,7 @@
 
 #include <string.h>
 #include "common.h"
-//#include "ast.h"
+#include "ast.h"
 //#include "symbol.h"
 //#include "semantic.h"
 #define YYERROR_VERBOSE
@@ -88,8 +88,8 @@ extern int yyline;        /* variable holding current line number   */
 /* The lower the precedence, the higher the priority is */
 %left       OR
 %left       AND
-%left       PLUS MINUS/* We did something special here, for every minus, we replace it with + (-number) */
 %nonassoc   DOUBLE_EQ N_EQ GREATER SMALLER S_EQ G_EQ EQ /* No associativity */
+%left       PLUS MINUS/* We did something special here, for every minus, we replace it with + (-number) */
 %left       TIMES DIVIDE
 %right      CARET
 %left       UNARY
