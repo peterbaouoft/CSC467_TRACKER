@@ -85,6 +85,7 @@ extern int yyline;        /* variable holding current line number   */
 %type <as_node> statements
 
 %type <as_id> ID
+%type <as_bool> CONST_TYPE
 %type <func_name> function_name
 
 
@@ -143,13 +144,13 @@ program
                                                                                                                      yTRACE("program: -> scope");}
   ;
 scope:
-    LEFT_CURLY declarations statements RIGHT_CURLY                                                                  { $$ = ast_allocate(SCOPE_NODE, $2); printf("This has to be arrived right\n");
+    LEFT_CURLY declarations statements RIGHT_CURLY                                                                  { $$ = ast_allocate(SCOPE_NODE, $2, $3);
                                                                                                                      yTRACE("scope: -> LEFT_CURLY declarations statements RIGHT_CURLY");}
     ;
 declarations
     : declarations declaration                                                                                      {$$ = ast_allocate(DECLARATIONS_NODE, $1, $2);
                                                                                                                      yTRACE("declarations: -> declarations declaration");}
-    |                                                                                                               {$$ = ast_allocate(DECLARATIONS_NODE, NULL, NULL);
+    |                                                                                                               {$$ = ast_allocate(DECLARATIONS_NODE, nullptr, nullptr);
                                                                                                                       yTRACE("declarations: -> epislon");}
     ;
 statements
@@ -159,11 +160,12 @@ statements
                                                                                                                      yTRACE("statements: -> epislon");}
     ;
 declaration
-    : type ID SEMICOLON                                                                                             {$$ = ast_allocate(DECLARATION_NODE, yylval.as_id, $1, NULL);
+    : type ID SEMICOLON                                                                                             {$$ = ast_allocate(DECLARATION_NODE, $1, $2, NULL, false);
                                                                                                                      yTRACE("declaration: -> type ID SEMICOLON");}
-    | type ID EQ expression SEMICOLON                                                                               {$$ = ast_allocate(DECLARATION_NODE, $2, $1, $4);
+    | type ID EQ expression SEMICOLON                                                                               {$$ = ast_allocate(DECLARATION_NODE, $1, $2, $4, false);
                                                                                                                      yTRACE("declaration: -> type ID EQ expression SEMICOLON");}
-    | CONST_TYPE type ID EQ expression SEMICOLON                                                                    {yTRACE("declaration: -> CONST_TYPE type ID EQ expression SEMICOLON");}
+    | CONST_TYPE type ID EQ expression SEMICOLON                                                                    {$$ = ast_allocate(DECLARATION_NODE, $2, $3, $5, true);
+                                                                                                                     yTRACE("declaration: -> CONST_TYPE type ID EQ expression SEMICOLON");}
     ;
 statement
     : variable EQ expression SEMICOLON                                                                              {$$ = ast_allocate(ASSIGNMENT_NODE, $1, $3);
@@ -238,7 +240,7 @@ expression
     ;
 
 variable
-    : ID                                                                                                            {$$ = ast_allocate(VARIABLE_NODE, yylval.as_id); /* Will this one work tho */
+    : ID                                                                                                            {$$ = ast_allocate(IDENTIFIER_NODE, yylval.as_id); /* Will this one work tho */
                                                                                                                      yTRACE("variable: -> ID");}
     | ID LEFT_BRACKET INT RIGHT_BRACKET                                                     %prec VECTOR_SUBSCRIPT  {$$ = ast_allocate(VECTOR_NODE, yylval.as_id, yylval.as_int);
                                                                                                                      yTRACE("variable: -> ID LEFT_BRACKET INT RIGHT_BRACKET");}

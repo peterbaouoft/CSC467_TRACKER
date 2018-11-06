@@ -1,2 +1,11 @@
-{int a;
- int b;}
+{
+    ivec2 a;
+    ivec3 b;
+    ivec4 c;
+    int d;
+    float e;
+    vec3 f;
+    bvec3 ge;
+    bool sd; bool a;
+
+}
