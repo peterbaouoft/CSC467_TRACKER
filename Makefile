@@ -21,8 +21,10 @@
 ###########################################################################
 # Compiler and Compiler Flags
 ###########################################################################
-CC      =g++
-CFLAGS  =-g -O0 -Wall
+CC = g++
+CFLAGS =-g -O0 -Wall
+CXX = g++
+CXXFLAGS=-g -O0 -Wall -std=c++11
 
 LEX     =flex
 LEXFLAGS=-l # C++ compilation

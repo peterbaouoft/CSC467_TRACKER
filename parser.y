@@ -17,8 +17,8 @@
 #include <string.h>
 #include "common.h"
 #include "ast.h"
-//#include "symbol.h"
-//#include "semantic.h"
+#include "symbol.h"
+#include "semantic.h"
 #define YYERROR_VERBOSE
 #define yTRACE(x)    { if (traceParser) fprintf(traceFile, "%s\n", x); }
 
@@ -59,7 +59,7 @@ extern int yyline;        /* variable holding current line number   */
     int vec_dimension;
     char func_name[3];
 
-    Node* as_node; /* this field is only used for AST */
+    void *as_node; /* this field is only used for AST */
 }
 
 /*********************************************************************
@@ -126,7 +126,7 @@ program
                                                                                                                      yTRACE("program: -> scope");}
   ;
 scope:
-    LEFT_CURLY declarations statements RIGHT_CURLY                                                                  { $$ = ast_allocate(SCOPE_NODE, $2);
+    LEFT_CURLY declarations statements RIGHT_CURLY                                                                  { $$ = ast_allocate(SCOPE_NODE, $2); printf("This has to be arrived right\n");
                                                                                                                      yTRACE("scope: -> LEFT_CURLY declarations statements RIGHT_CURLY");}
     ;
 declarations
@@ -140,7 +140,7 @@ statements
     |                                                                                                               {yTRACE("statements: -> epislon");}
     ;
 declaration
-    : type ID SEMICOLON                                                                                             {$$ = ast_allocate($1, $2);
+    : type ID SEMICOLON                                                                                             {$$ = ast_allocate(DECLARATION_NODE, $2,$1);
                                                                                                                      yTRACE("declaration: -> type ID SEMICOLON");}
     | type ID EQ expression SEMICOLON                                                                               {yTRACE("declaration: -> type ID EQ expression SEMICOLON");}
     | CONST_TYPE type ID EQ expression SEMICOLON                                                                    {yTRACE("declaration: -> CONST_TYPE type ID EQ expression SEMICOLON");}
@@ -157,11 +157,11 @@ else_statement
     |                                                                                                               {yTRACE("statement: -> epislon");}
     ;
 type
-    : INT_TYPE                                                                                                      {$$ = ast_allocate(0, yylval.vec_dimension);
+    : INT_TYPE                                                                                                      {$$ = ast_allocate(TYPE_NODE, 0, yylval.vec_dimension);
                                                                                                                      yTRACE("type: -> INT_TYPE");}
-    | BOOL_TYPE                                                                                                     {$$ = ast_allocate(1, yylval.vec_dimension);
+    | BOOL_TYPE                                                                                                     {$$ = ast_allocate(TYPE_NODE, 1, yylval.vec_dimension);
                                                                                                                      yTRACE("type: -> BOOL_TYPE");}
-    | FLOAT_TYPE                                                                                                    {$$ = ast_allocate(2, yylval.vec_dimension);
+    | FLOAT_TYPE                                                                                                    {$$ = ast_allocate(TYPE_NODE, 2, yylval.vec_dimension);
                                                                                                                      yTRACE("type: -> FLOAT_TYPE");}
     ;
 expression

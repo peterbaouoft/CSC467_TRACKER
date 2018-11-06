@@ -8,43 +8,43 @@
 #define DEBUG_PRINT_TREE 0
 
 
-Node* ast_allocate(NodeKind type, ...){
+void* ast = NULL;
+
+void* ast_allocate(NodeKind type, ...){
 
     va_list args;
 
-    Node *ret_node = NULL;
+    void *ret_node = NULL;
+    va_start(args, type);
     switch(type) {
         case SCOPE_NODE: {
             Scope* scope = new Scope();
-            scope->d = va_arg(args, Declarations*);
+            scope->d = reinterpret_cast<Declarations*>(va_arg(args, void*));
 
-            ret_node = scope;
+            ret_node = reinterpret_cast<void*>(scope);
             break;
         }
 
         case DECLARATIONS_NODE:{
             Declarations *declarations = new Declarations();
-            declarations->declarations = va_arg(args, Declarations*);
-            declarations->declaration =  va_arg(args, Declaration*);
+            declarations->declarations = reinterpret_cast<Declarations*>(va_arg(args, void*));
+            declarations->declaration =  reinterpret_cast<Declaration*>(va_arg(args, void*));
 
-            ret_node = declarations;
+            ret_node = reinterpret_cast<void*>(declarations);
             break;
         }
 
         case DECLARATION_NODE: {
             Declaration *declaration = new Declaration();
-            declaration->i = va_arg(args, Identifier*);
-            declaration->t = va_arg(args, Type*);
-            // char* val = va_arg(args, char*);
-            // if (val != NULL)
-                // declaration->initial_val =  static_cast<string>(val);
+            declaration->i = reinterpret_cast<Identifier*>(va_arg(args, void*));
+            declaration->t = reinterpret_cast<Type*>(va_arg(args, void*));
 
-            ret_node = declaration;
+            ret_node = reinterpret_cast<void*>(declaration);
             break;
         }
         case IDENT_NODE: {
             string val = static_cast<string>(va_arg(args, char*));
-            ret_node = new Identifier(val);
+            ret_node = reinterpret_cast<void*>(new Identifier(val));
             break;
         }
         case TYPE_NODE: {

@@ -6,8 +6,10 @@
 #include <list>
 #include <string>
 #include <assert.h>
-using namespace std;
+#include <iostream>
 
+
+using namespace std;
 // Forward declarations
 class Scope;
 class Declaration;
@@ -16,8 +18,6 @@ class Vistior;
 class Type;
 class Node;
 class Identifier;
-
-extern Node *ast;
 
 typedef enum {
   UNKNOWN               = 0,
@@ -45,9 +45,10 @@ typedef enum {
 } NodeKind;
 
 
+extern void* ast;
+
 class Visitor {
 public:
-    void visit(Declarations *decls);
     void visit(Identifier *idet);
     void visit(Scope *scope);
     void visit(Declaration *decl);
@@ -64,20 +65,20 @@ class Type : public Node {
         virtual void visit(Visitor &visitor){
             visitor.visit(this);
         }
-        string type_name;
+        std::string type_name;
 
-        Type(string type){
+        Type(std::string type){
             this->type_name = type;
         }
 };
 
 class Identifier : public Node {
     public:
-        string name;
+        std::string name;
         virtual void visit(Visitor &visitor){
             visitor.visit(this);
         }
-        Identifier(string val){
+        Identifier(std::string val){
             this->name = val;
         }
 };
@@ -107,29 +108,32 @@ class  Scope: public Node {
         Declarations* d;
         virtual void visit(Visitor &visitor) {
             visitor.visit(this);
+            if (d)
+                d->visit(visitor);
+            //s->visit(visitor);
+            printf(")\n");
         }
 };
 
 inline void Visitor::visit(Scope *scope){
-    ;
+    printf("(SCOPE \n");
 }
 
 inline void Visitor::visit(Identifier *ident){
+    /* C++ does not supports string for printf */
+    cout << ident->name;
     ;
 }
 
 inline void Visitor::visit(Declaration *decl){
-    ;
-}
-
-inline void Visitor::visit(Declarations *decls){
-    ;
+    printf("(DECLARATION ");
 }
 
 inline void Visitor::visit(Type *type){
-    ;
+    cout << type->type_name;
 }
 
-Node *ast_allocate(NodeKind type, ...);
+void *ast_allocate(NodeKind type, ...);
 
+void ast_print(void *ast_root);
 #endif /* AST_H_ */
