@@ -52,9 +52,14 @@ extern int yyline;        /* variable holding current line number   */
 // Can access me from flex useing yyval
 
 %union {
+
+    /* Scanner code */
     bool as_bool;
     int as_int;
     float as_float;
+    char as_id[MAX_IDENTIFIER - 1];
+
+
 
     int vec_dimension;
     char func_name[3];
@@ -69,7 +74,6 @@ extern int yyline;        /* variable holding current line number   */
 %type <as_node> declarations
 %type <as_node> declaration
 %type <as_node> type
-%type <as_node> ID
 %type <as_node> statement
 %type <as_node> else_statement
 %type <as_node> expression
@@ -80,6 +84,7 @@ extern int yyline;        /* variable holding current line number   */
 %type <as_node> arguments
 %type <as_node> statements
 
+%type <as_id> ID
 %type <func_name> function_name
 
 
@@ -154,7 +159,7 @@ statements
                                                                                                                      yTRACE("statements: -> epislon");}
     ;
 declaration
-    : type ID SEMICOLON                                                                                             {$$ = ast_allocate(DECLARATION_NODE, $2,$1, NULL);
+    : type ID SEMICOLON                                                                                             {$$ = ast_allocate(DECLARATION_NODE, yylval.as_id, $1, NULL);
                                                                                                                      yTRACE("declaration: -> type ID SEMICOLON");}
     | type ID EQ expression SEMICOLON                                                                               {$$ = ast_allocate(DECLARATION_NODE, $2, $1, $4);
                                                                                                                      yTRACE("declaration: -> type ID EQ expression SEMICOLON");}
@@ -233,9 +238,9 @@ expression
     ;
 
 variable
-    : ID                                                                                                            {$$ = ast_allocate(VARIABLE_NODE, $1); /* Will this one work tho */
+    : ID                                                                                                            {$$ = ast_allocate(VARIABLE_NODE, yylval.as_id); /* Will this one work tho */
                                                                                                                      yTRACE("variable: -> ID");}
-    | ID LEFT_BRACKET INT RIGHT_BRACKET                                                     %prec VECTOR_SUBSCRIPT  {$$ = ast_allocate(VECTOR_NODE, $1, yylval.as_int);
+    | ID LEFT_BRACKET INT RIGHT_BRACKET                                                     %prec VECTOR_SUBSCRIPT  {$$ = ast_allocate(VECTOR_NODE, yylval.as_id, yylval.as_int);
                                                                                                                      yTRACE("variable: -> ID LEFT_BRACKET INT RIGHT_BRACKET");}
     ;
 
