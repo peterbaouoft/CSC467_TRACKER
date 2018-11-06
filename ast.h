@@ -87,9 +87,14 @@ class Declaration : public Node {
     public:
         Type *t;
         Identifier *i;
-        string initial_val;
+        std::string initial_val;
         virtual void visit(Visitor &visitor) {
             visitor.visit(this);
+            i->visit(visitor);
+            t->visit(visitor);
+            if (initial_val.length() != 0)
+                cout << initial_val;
+            printf(")\n");
         }
 };
 
@@ -98,7 +103,10 @@ class Declarations : public Node {
         Declarations *declarations;
         Declaration *declaration;
         virtual void visit(Visitor &visitor) {
-            visitor.visit(this);
+            if (declaration != NULL)
+                declaration->visit(visitor);
+            if (declarations != NULL)
+                declarations->visit(visitor);
         }
 };
 

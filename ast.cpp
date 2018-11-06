@@ -55,22 +55,25 @@ void* ast_allocate(NodeKind type, ...){
                                        { "float", "vec2", "vec3", "vec4"}};
             if (type_index > 2 || dimen_index > 3)
                 assert(true && "Index for type, please check for bugs\n");
-            string type = type_list[type_index][dimen_index];
-
-            ret_node = new Type(type);
+            string type = type_list[type_index][dimen_index - 1]; /* dim goes from 1 to 4 */
+            cout << "Test instantiations\n" << type;
+            ret_node = reinterpret_cast<void*>(new Type(type));
             break;
         }
         default:
             ;
+
     }
 
-
-    return NULL;
-
-}
-
-
-void ast_print(Node* root){
-
+    va_end(args);
+    return ret_node;
 
 }
+
+
+void ast_print(void* root){
+    Node *casted_class = reinterpret_cast<Node*>(root);
+    Visitor visitor;
+    casted_class->visit(visitor);
+}
+
