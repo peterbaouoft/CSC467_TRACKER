@@ -2,12 +2,6 @@
 #ifndef AST_H_
 #define AST_H_ 1
 
-#include <stdarg.h>
-#include <list>
-#include <string>
-#include <assert.h>
-#include <iostream>
-
 /**************************************************************************
  *                              FORWARD DECLARATIONS                      *
  *                                                                        *
@@ -35,6 +29,10 @@ class BoolLiteralExpression;
 class Constructor;
 class UnaryExpression;
 class BinaryExpression;
+class VariableExpression;
+class FunctionExpression;
+
+class Function;
 class IdentifierNode;
 class Arguments;
 
@@ -76,7 +74,6 @@ typedef enum
     CONSTRUCTOR_EXPRESSION,
     VARIABLE,
     FUNCTION,
-    EXPRESSION,
 } ExpressionType;
 
 class Visitor
@@ -99,7 +96,10 @@ class Visitor
     void visit(IntLiteralExpression *ile);
     void visit(UnaryExpression *ue);
     void visit(BinaryExpression *be);
+    void visit(VariableExpression *ve);
+    void visit(FunctionExpression *fe);
 
+    void visit(Function *f);
     void visit(Constructor *c);
     void visit(Arguments *args);
     void visit(IdentifierNode *var);

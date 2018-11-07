@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+#include <stdarg.h>
+#include <string>
+#include <iostream>
 #include <vector>
 #include "ast.h"
 #include "common.h"
@@ -14,9 +16,9 @@ using namespace std;
 class Type : public Node
 {
   public:
-    std::string type_name;
+    string type_name;
 
-    Type(const std::string &type)
+    Type(const string &type)
     {
         this->type_name = type;
     }
@@ -117,15 +119,19 @@ class IfStatement : public Statement
         visitor.visit(this);
     };
 };
+
 class NestedScope : public Statement
 {
   public:
-    Statement *statement;
+    Scope *scope;
+
+    NestedScope(Scope *s) : scope(s) {}
     virtual void visit(Visitor &visitor)
     {
         visitor.visit(this);
     };
 };
+
 /*================END OF STATEMENT CLASS================*/
 
 /*================Start of Expression classes===========*/
@@ -133,16 +139,38 @@ class Expression : public Node
 {
   public:
     ExpressionType expression_type;
-    Expression(ExpressionType et)
-    {
-        this->expression_type = et;
-    }
 };
 
 class ConstructorExpression : public Expression
 {
   public:
     Constructor *constructor;
+
+    ConstructorExpression(Constructor *ct) : constructor(ct) {}
+    virtual void visit(Visitor &visitor)
+    {
+        visitor.visit(this);
+    };
+};
+
+class FunctionExpression : public Expression
+{
+  public:
+    Function *function;
+
+    FunctionExpression(Function *func) : function(func) {}
+    virtual void visit(Visitor &visitor)
+    {
+        visitor.visit(this);
+    };
+};
+
+class VariableExpression : public Expression
+{
+  public:
+    IdentifierNode *id_node;
+
+    VariableExpression(IdentifierNode *id) : id_node(id) {}
     virtual void visit(Visitor &visitor)
     {
         visitor.visit(this);
@@ -153,6 +181,8 @@ class IntLiteralExpression : public Expression
 {
   public:
     int int_literal;
+
+    IntLiteralExpression(int int_val) : int_literal(int_val) {}
     virtual void visit(Visitor &visitor)
     {
         visitor.visit(this);
@@ -163,6 +193,8 @@ class BoolLiteralExpression : public Expression
 {
   public:
     bool bool_literal;
+
+    BoolLiteralExpression(bool bool_val) : bool_literal(bool_val) {}
     virtual void visit(Visitor &visitor)
     {
         visitor.visit(this);
@@ -173,6 +205,8 @@ class FloatLiteralExpression : public Expression
 {
   public:
     float float_literal;
+
+    FloatLiteralExpression(float float_val) : float_literal(float_val) {}
     virtual void visit(Visitor &visitor)
     {
         visitor.visit(this);
@@ -182,8 +216,10 @@ class FloatLiteralExpression : public Expression
 class UnaryExpression : public Node
 {
   public:
-    string op;
+    int operator_type;
     Expression *right_expression;
+
+    UnaryExpression(int op, Expression *rhs_expression) : operator_type(op), right_expression(rhs_expression) {}
     virtual void visit(Visitor &visitor)
     {
         visitor.visit(this);
@@ -194,6 +230,22 @@ class BinaryExpression : public UnaryExpression
 {
   public:
     Expression *left_expression;
+
+    BinaryExpression(int op, Expression *rhs_expression, Expression *lhs_expression) :
+        UnaryExpression(op, rhs_expression), left_expression(lhs_expression) {}
+    virtual void visit(Visitor &visitor)
+    {
+        visitor.visit(this);
+    };
+};
+
+class Function : public Node
+{
+  public:
+    string function_name;
+    Arguments *arguments;
+
+
     virtual void visit(Visitor &visitor)
     {
         visitor.visit(this);
@@ -205,6 +257,8 @@ class Constructor : public Node
   public:
     Type *type;
     Arguments *args;
+
+    Constructor (Type *t, Arguments *arguments) : type(t), args(arguments) {}
     virtual void visit(Visitor &visitor)
     {
         visitor.visit(this);
@@ -214,12 +268,14 @@ class Constructor : public Node
 class Arguments : public Node
 {
   public:
-    Arguments *args;
-    Expression *expression;
+    vector<Expression *> expression_list;
+
     virtual void visit(Visitor &visitor)
     {
         visitor.visit(this);
     };
+
+    virtual void push_back_expression(Expression *expression) {expression_list.push_back(expression);}
 };
 
 class IdentifierNode : public Node
@@ -227,6 +283,8 @@ class IdentifierNode : public Node
   public:
     Type *type;
     string id;
+
+    IdentifierNode(Type *t, string identifier) : type(t), id(identifier) {}
     virtual void visit(Visitor &visitor)
     {
         visitor.visit(this);
@@ -256,6 +314,7 @@ node *ast_allocate(NodeKind type, ...)
     va_start(args, type);
     switch (type)
     {
+
     case SCOPE_NODE:
     {
         Scope *scope = new Scope();
@@ -364,23 +423,102 @@ node *ast_allocate(NodeKind type, ...)
 
     case NESTED_SCOPE_NODE:
     {
-        NestedScope *ns = new NestedScope();
+        Scope *scope = va_arg(args, Scope*);
+        ret_node = new NestedScope(scope);
+        break;
+    }
+
+    /*===========================EXPRESSION============================*/
+    case EXPRESSION_NODE:
+    {
+        ExpressionType et = static_cast<ExpressionType>(va_arg(args, int));
+        switch (et)
+        {
+
+        case CONSTRUCTOR_EXPRESSION:
+        {
+            Constructor *ct = va_arg(args, Constructor *);
+            ret_node = new ConstructorExpression(ct);
+            break;
+        }
+        case FUNCTION:
+        {
+            Function *func = va_arg(args, Function *);
+            ret_node = new FunctionExpression(func);
+            break;
+        }
+        case VARIABLE:
+        {
+            IdentifierNode *id_node = va_arg(args, IdentifierNode*);
+            ret_node = new VariableExpression(id_node);
+            break;
+        }
+
+        case BOOL_EXPRESSION:
+        {
+            bool bool_literal = static_cast<bool>(va_arg(args, int));
+            ret_node = new BoolLiteralExpression(bool_literal);
+            break;
+        }
+        case INT_LITERAL:
+        {
+            int int_literal = va_arg(args, int);
+            ret_node = new IntLiteralExpression(int_literal);
+            break;
+        }
+        case FLOAT_LITERAL:
+        {
+            float float_literal = static_cast<float>(va_arg(args, double));
+            ret_node = new FloatLiteralExpression(float_literal);
+            break;
+        }
+        }
+        break;
+    }
+
+    case UNARY_EXPRESSION_NODE:
+    {
+
+        break;
+    }
+
+    case BINARY_EXPRESSION_NODE:
+    {
+
+        break;
+    }
+
+    case VECTOR_NODE:
+    {
+        break;
+    }
+
+    case FUNCTION_NODE:
+    {
+
+        break;
+    }
+
+    case CONSTRUCTOR_NODE:
+    {
+        Type *type = va_arg(args, Type*);
+        Arguments *arguments = va_arg(args, Arguments*);
+
+        ret_node = new Constructor(type, arguments);
         break;
     }
 
     case IDENTIFIER_NODE:
     {
-        IdentifierNode *ident = new IdentifierNode();
-        ident->type = new Type("ANY_TYPE");
-        ident->id = static_cast<string>(va_arg(args, char *));
+        Type *type = new Type("ANY_TYPE");
+        string id = static_cast<string>(va_arg(args, char *));
 
-        ret_node = ident;
+        ret_node = new IdentifierNode(type, id);
         break;
     }
+
     default:;
     }
-
-    /*===========================EXPRESSION============================*/
 
     va_end(args);
     return ret_node;
@@ -391,7 +529,7 @@ void ast_print(node *root)
     Visitor visitor;
     root->visit(visitor);
 }
-
+/*===============================================VISITORS=====================================*/
 void Visitor::visit(Scope *scope)
 {
     printf("(SCOPE \n");
@@ -442,17 +580,25 @@ void Visitor::visit(AssignStatement *assign_stmt)
 {
     printf("(ASSIGN");
     assign_stmt->variable->visit(*this);
-    //assign_stmt->expression->visit(*this);
+    assign_stmt->expression->visit(*this);
+    printf(")");
 }
 
-void Visitor::visit(IfStatement *)
+void Visitor::visit(IfStatement *if_statement)
 {
-    ;
+    printf("(IF ");
+    if_statement->expression->visit(*this);
+    if_statement->statement->visit(*this);
+    if (if_statement->else_statement){
+        printf(" ");
+        if_statement->else_statement->visit(*this);
+    }
+    printf(")");
 }
 
-void Visitor::visit(NestedScope *)
+void Visitor::visit(NestedScope *ns)
 {
-    ;
+    ns->scope->visit(*this);
 }
 void Visitor::visit(IdentifierNode *ident)
 {
@@ -460,3 +606,38 @@ void Visitor::visit(IdentifierNode *ident)
     ident->type->visit(*this);
     printf(" %s ", ident->id.c_str());
 }
+
+void Visitor::visit(FunctionExpression *fe)
+{
+    fe->function->visit(*this);
+}
+void Visitor::visit(VariableExpression *ve)
+{
+    ve->id_node->visit(*this);
+}
+
+void Visitor::visit(ConstructorExpression *ce)
+{
+    ce->constructor->visit(*this);
+}
+void Visitor::visit(IntLiteralExpression *ile)
+{
+    printf("%d", ile->int_literal);
+}
+
+void Visitor::visit(BoolLiteralExpression *ble)
+{
+    string a = ble->bool_literal? "true" : "false";
+    printf("%s", a.c_str());
+}
+
+void Visitor::visit(FloatLiteralExpression *fle)
+{
+    printf("%f", fle->float_literal);
+}
+
+void Visitor::visit(Constructor *ct)
+{
+    ;
+}
+
