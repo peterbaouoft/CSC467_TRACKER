@@ -215,9 +215,15 @@ class FloatLiteralExpression : public Expression
 
 class UnaryExpression : public Node
 {
+  private:
+    Type *type;
   public:
     int operator_type;
     Expression *right_expression;
+
+  public:
+    Type *get_unary_expr_type() {return type;}
+    void  set_unary_expr_type(Type *t) { if(t) type = t;}
 
     UnaryExpression(int op, Expression *rhs_expression) : operator_type(op), right_expression(rhs_expression) {}
     virtual void visit(Visitor &visitor)
@@ -228,8 +234,14 @@ class UnaryExpression : public Node
 
 class BinaryExpression : public UnaryExpression
 {
+  private:
+    Type *type;
   public:
     Expression *left_expression;
+
+  public:
+    Type *get_binary_expr_type() {return type;}
+    void  set_binary_expr_type(Type *t) { if(t) type = t;}
 
     BinaryExpression(int op, Expression *rhs_expression, Expression *lhs_expression) :
         UnaryExpression(op, rhs_expression), left_expression(lhs_expression) {}
@@ -237,6 +249,8 @@ class BinaryExpression : public UnaryExpression
     {
         visitor.visit(this);
     };
+
+
 };
 
 class Function : public Node
@@ -281,7 +295,7 @@ class Arguments : public Node
 class IdentifierNode : public Node
 {
   public:
-    Type *type;
+    Type *type; /* Todo, move this to private member */
     string id;
 
     IdentifierNode(Type *t, string identifier) : type(t), id(identifier) {}
@@ -293,8 +307,10 @@ class IdentifierNode : public Node
 
 class VectorVariable : public IdentifierNode
 {
+
   public:
     int vector_index;
+
     virtual void visit(Visitor &visitor)
     {
         visitor.visit(this);
@@ -364,6 +380,9 @@ node *ast_allocate(NodeKind type, ...)
     {
         int type_index = va_arg(args, int);
         int dimen_index = va_arg(args, int);
+
+        /* Here, we get the corresponding type from the given indices
+         * and create a Type node based off that */
         string type_list[3][4] = {{"int", "ivec2", "ivec3", "ivec4"},
                                   {"bool", "bvec2", "bvec3", "bvec4"},
                                   {"float", "vec2", "vec3", "vec4"}};
@@ -431,6 +450,8 @@ node *ast_allocate(NodeKind type, ...)
     /*===========================EXPRESSION============================*/
     case EXPRESSION_NODE:
     {
+        /* Here, we get the specific type for a single expression and
+         * instantiate its subtype accordingly */
         ExpressionType et = static_cast<ExpressionType>(va_arg(args, int));
         switch (et)
         {
@@ -478,24 +499,41 @@ node *ast_allocate(NodeKind type, ...)
 
     case UNARY_EXPRESSION_NODE:
     {
+        int operator_type = va_arg(args, int);
+        Expression *expression = va_arg(args, Expression*);
 
+        UnaryExpression* unary_expr = new UnaryExpression(operator_type, expression);
+        /* Below is done before the semantic analysis, the type value will be filled
+         * in, once semantic analysis is complete */
+        unary_expr->set_unary_expr_type(new Type("ANY_TYPE"));
+        ret_node = unary_expr;
         break;
     }
 
     case BINARY_EXPRESSION_NODE:
     {
+        Expression *lhs_expr = va_arg(args, Expression *);
+        int operator_type  = va_arg(args, int);
+        Expression *rhs_expr = va_arg(args, Expression *);
 
+        BinaryExpression *bin_expr = new BinaryExpression(operator_type, rhs_expr, lhs_expr);
+        /* Below is done before the semantic analysis, the type value will be filled
+         * in, once semantic analysis is complete */
+        bin_expr->set_binary_expr_type(new Type("ANY_TYPE"));
+        ret_node = bin_expr;
         break;
     }
 
+
     case VECTOR_NODE:
     {
+        /* Need to think about types from identifier node */
         break;
     }
 
     case FUNCTION_NODE:
     {
-
+        /* Need to think about arguments null or non-null case */
         break;
     }
 
@@ -600,12 +638,6 @@ void Visitor::visit(NestedScope *ns)
 {
     ns->scope->visit(*this);
 }
-void Visitor::visit(IdentifierNode *ident)
-{
-    printf(" ");
-    ident->type->visit(*this);
-    printf(" %s ", ident->id.c_str());
-}
 
 void Visitor::visit(FunctionExpression *fe)
 {
@@ -636,8 +668,39 @@ void Visitor::visit(FloatLiteralExpression *fle)
     printf("%f", fle->float_literal);
 }
 
+void Visitor::visit(UnaryExpression *ue)
+{
+    printf("(UNARY");
+    ue->get_unary_expr_type()->visit(*this);
+    printf(""); /*Fill in operator information */
+    ue->right_expression->visit(*this);
+    printf(")\n");
+}
+
+void Visitor::visit(BinaryExpression *be)
+{
+    printf("(BINARY");
+    be->get_binary_expr_type()->visit(*this);
+    printf(""); /*Fill in operator information */
+    be->left_expression->visit(*this);
+    be->right_expression->visit(*this);
+    printf(")");
+}
+
 void Visitor::visit(Constructor *ct)
 {
-    ;
+    printf("(CALL");
+    ct->type->visit(*this);
+    ct->args->visit(*this);
+    printf(")");
 }
+void Visitor::visit(IdentifierNode *ident)
+{
+    printf(" ");
+    ident->type->visit(*this);
+    printf(" %s ", ident->id.c_str());
+}
+
+
+
 
