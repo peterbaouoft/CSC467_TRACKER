@@ -7,5 +7,5 @@
     vec3 f;
     bvec3 ge;
     bool sd; bool a;
-
+    f = a;
 }

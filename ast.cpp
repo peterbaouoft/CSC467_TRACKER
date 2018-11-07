@@ -81,7 +81,7 @@ class Statements : public Node
   public:
     vector<Statement *> statement_list;
 
-    virtual void push_back_statement(Statement *stmt) { statement_list.push_back(stmt);}
+    virtual void push_back_statement(Statement *stmt) { statement_list.push_back(stmt); }
     virtual void visit(Visitor &visitor)
     {
         visitor.visit(this);
@@ -90,8 +90,8 @@ class Statements : public Node
 
 class Statement : public Node
 {
-    public:
-        virtual void visit(Visitor &visitor) = 0;
+  public:
+    virtual void visit(Visitor &visitor) = 0;
 };
 
 class AssignStatement : public Statement
@@ -225,6 +225,7 @@ class Arguments : public Node
 class IdentifierNode : public Node
 {
   public:
+    Type *type;
     string id;
     virtual void visit(Visitor &visitor)
     {
@@ -366,9 +367,20 @@ node *ast_allocate(NodeKind type, ...)
         NestedScope *ns = new NestedScope();
         break;
     }
-        default:
-            ;
+
+    case IDENTIFIER_NODE:
+    {
+        IdentifierNode *ident = new IdentifierNode();
+        ident->type = new Type("ANY_TYPE");
+        ident->id = static_cast<string>(va_arg(args, char *));
+
+        ret_node = ident;
+        break;
     }
+    default:;
+    }
+
+    /*===========================EXPRESSION============================*/
 
     va_end(args);
     return ret_node;
@@ -389,13 +401,14 @@ void Visitor::visit(Scope *scope)
     printf(")\n");
 }
 
-void Visitor::visit (Declarations *decl){
+void Visitor::visit(Declarations *decl)
+{
     printf("(DECLARATIONS ");
     for (Declaration *declaration : decl->declaration_list)
-        {
-            assert(declaration != nullptr);
-            declaration->visit(*this);
-        }
+    {
+        assert(declaration != nullptr);
+        declaration->visit(*this);
+    }
     printf(") ");
 }
 void Visitor::visit(Declaration *decl)
@@ -420,14 +433,16 @@ void Visitor::visit(Statements *stmts)
     for (Statement *stmt : stmts->statement_list)
     {
         assert(stmt != nullptr);
-        // stmt->visit(*this);
+        stmt->visit(*this);
     }
     printf(")");
 }
 
-void Visitor::visit(AssignStatement *)
+void Visitor::visit(AssignStatement *assign_stmt)
 {
-    ;
+    printf("(ASSIGN");
+    assign_stmt->variable->visit(*this);
+    //assign_stmt->expression->visit(*this);
 }
 
 void Visitor::visit(IfStatement *)
@@ -439,4 +454,9 @@ void Visitor::visit(NestedScope *)
 {
     ;
 }
-
+void Visitor::visit(IdentifierNode *ident)
+{
+    printf(" ");
+    ident->type->visit(*this);
+    printf(" %s ", ident->id.c_str());
+}
