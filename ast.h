@@ -1,6 +1,7 @@
 
 #ifndef AST_H_
 #define AST_H_ 1
+#include <stdlib.h>
 
 /**************************************************************************
  *                              FORWARD DECLARATIONS                      *
@@ -19,6 +20,7 @@ class Statements;
 class AssignStatement;
 class IfStatement;
 class NestedScope;
+class EmptyStatement;
 
 /*--------------------------------Expression related---------------------*/
 class Expression;
@@ -34,6 +36,7 @@ class FunctionExpression;
 
 class Function;
 class IdentifierNode;
+class VectorVariable;
 class Arguments;
 
 typedef Node node;
@@ -54,6 +57,7 @@ typedef enum
     IF_STATEMENT_NODE = (1 << 1) | (1 << 11),
     ASSIGNMENT_NODE = (1 << 1) | (1 << 13),
     NESTED_SCOPE_NODE = (1 << 1) | (1 << 14),
+    EMPTY_STATEMENT_NODE = (1 << 2) | (1 << 7),
 
     EXPRESSION_NODE = (1 << 2),
     UNARY_EXPRESSION_NODE = (1 << 2) | (1 << 3),
@@ -79,30 +83,38 @@ typedef enum
 class Visitor
 {
   public:
-    void visit(Scope *scope);
-    void visit(Declaration *decl);
-    void visit (Declarations *decls);
-    void visit(Type *type);
+    virtual void visit(Scope *scope);
+    virtual void visit(Declaration *decl);
+    virtual void visit (Declarations *decls);
+    virtual void visit(Type *type);
 
-    void visit(Statement *stmt);
-    void visit(Statements *stmts);
-    void visit(AssignStatement *as_stmt);
-    void visit(IfStatement *if_statement);
-    void visit(NestedScope *ns);
+    virtual void visit(Statement *stmt);
+    virtual void visit(Statements *stmts);
+    virtual void visit(AssignStatement *as_stmt);
+    virtual void visit(IfStatement *if_statement);
+    virtual void visit(NestedScope *ns);
+    virtual void visit(EmptyStatement *es);
 
-    void visit(ConstructorExpression *ce);
-    void visit(FloatLiteralExpression *fle);
-    void visit(BoolLiteralExpression *ble);
-    void visit(IntLiteralExpression *ile);
-    void visit(UnaryExpression *ue);
-    void visit(BinaryExpression *be);
-    void visit(VariableExpression *ve);
-    void visit(FunctionExpression *fe);
+    virtual void visit(ConstructorExpression *ce);
+    virtual void visit(FloatLiteralExpression *fle);
+    virtual void visit(BoolLiteralExpression *ble);
+    virtual void visit(IntLiteralExpression *ile);
+    virtual void visit(UnaryExpression *ue);
+    virtual void visit(BinaryExpression *be);
+    virtual void visit(VariableExpression *ve);
+    virtual void visit(FunctionExpression *fe);
 
-    void visit(Function *f);
-    void visit(Constructor *c);
-    void visit(Arguments *args);
-    void visit(IdentifierNode *var);
+    virtual void visit(Function *f);
+    virtual void visit(Constructor *c);
+    virtual void visit(Arguments *args);
+    virtual void visit(IdentifierNode *var);
+    virtual void visit(VectorVariable *vec_var);
+};
+
+class PrintVisitor : Visitor {
+
+
+
 };
 
 class Node

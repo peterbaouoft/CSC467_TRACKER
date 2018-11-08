@@ -133,6 +133,14 @@ class NestedScope : public Statement
     };
 };
 
+class EmptyStatement: public Statement
+{
+   public:
+    virtual void visit(Visitor &visitor) {
+        visitor.visit(this);
+    }
+};
+
 /*================END OF STATEMENT CLASS================*/
 
 /*================Start of Expression classes===========*/
@@ -318,10 +326,11 @@ class IdentifierNode : public Node
 
 class VectorVariable : public IdentifierNode
 {
-
   public:
     int vector_index;
 
+    VectorVariable(string id_node, int v_index) :
+        IdentifierNode(id_node), vector_index(v_index) {}
     virtual void visit(Visitor &visitor)
     {
         visitor.visit(this);
@@ -458,6 +467,12 @@ node *ast_allocate(NodeKind type, ...)
         break;
     }
 
+    case EMPTY_STATEMENT_NODE:
+    {
+        ret_node = new EmptyStatement();
+        break;
+    }
+
     /*===========================EXPRESSION============================*/
     case EXPRESSION_NODE:
     {
@@ -539,6 +554,13 @@ node *ast_allocate(NodeKind type, ...)
     case VECTOR_NODE:
     {
         /* Need to think about types from identifier node */
+        string id_node(va_arg(args, char*));
+        int int_literal = va_arg(args, int);
+
+        VectorVariable *vec_var = new VectorVariable(id_node, int_literal);
+        vec_var->set_id_type(new Type("ANY_TYPE"));
+
+        ret_node = vec_var;
         break;
     }
 
@@ -612,7 +634,7 @@ void Visitor::visit(Declarations *decl)
     printf("(DECLARATIONS ");
     for (Declaration *declaration : decl->declaration_list)
     {
-        assert(declaration != nullptr);
+        assert (declaration != nullptr);
         declaration->visit(*this);
     }
     printf(") ");
@@ -623,8 +645,10 @@ void Visitor::visit(Declaration *decl)
     assert(decl->type);
     printf(" %s ", decl->id.c_str());
     decl->type->visit(*this);
-    if (decl->initial_val != nullptr)
+    if (decl->initial_val != nullptr) {
+        printf(" ");
         decl->initial_val->visit(*this);
+    }
     printf(") ");
 }
 
@@ -642,6 +666,10 @@ void Visitor::visit(Statements *stmts)
         stmt->visit(*this);
     }
     printf(")");
+}
+
+void Visitor::visit(Statement *stmt) {
+    assert(0);
 }
 
 void Visitor::visit(AssignStatement *assign_stmt)
@@ -669,6 +697,11 @@ void Visitor::visit(NestedScope *ns)
     ns->scope->visit(*this);
 }
 
+void Visitor::visit(EmptyStatement *es)
+{
+    ;
+}
+
 void Visitor::visit(FunctionExpression *fe)
 {
     fe->function->visit(*this);
@@ -680,6 +713,7 @@ void Visitor::visit(VariableExpression *ve)
 
 void Visitor::visit(ConstructorExpression *ce)
 {
+
     ce->constructor->visit(*this);
 }
 void Visitor::visit(IntLiteralExpression *ile)
@@ -689,8 +723,7 @@ void Visitor::visit(IntLiteralExpression *ile)
 
 void Visitor::visit(BoolLiteralExpression *ble)
 {
-    string a = ble->bool_literal? "true" : "false";
-    printf("%s", a.c_str());
+    printf("%s", (ble->bool_literal? "true" : "false"));
 }
 
 void Visitor::visit(FloatLiteralExpression *fle)
@@ -700,19 +733,19 @@ void Visitor::visit(FloatLiteralExpression *fle)
 
 void Visitor::visit(UnaryExpression *ue)
 {
-    printf("(UNARY");
+    printf("(UNARY ");
     ue->get_unary_expr_type()->visit(*this);
-    printf(""); /*Fill in operator information */
+    printf(" OP"); /*Fill in operator information */
     ue->right_expression->visit(*this);
     printf(")\n");
 }
 
 void Visitor::visit(BinaryExpression *be)
 {
-    printf("(BINARY");
+    printf("(BINARY ");
     Type *t = be->get_binary_expr_type();
     t->visit(*this);
-    printf(""); /*Fill in operator information */
+    printf(" OP"); /*Fill in operator information */
     be->left_expression->visit(*this);
     be->right_expression->visit(*this);
     printf(")");
@@ -721,11 +754,15 @@ void Visitor::visit(BinaryExpression *be)
 
 void Visitor::visit(Function *func)
 {
-    ;
+    printf("(CALL");
+    printf(" %s", func->function_name.c_str());
+    func->arguments->visit(*this);
+    printf(")");
+
 }
 void Visitor::visit(Constructor *ct)
 {
-    printf("(CALL");
+    printf("(CALL ");
     ct->type->visit(*this);
     ct->args->visit(*this);
     printf(")");
@@ -733,16 +770,25 @@ void Visitor::visit(Constructor *ct)
 
 void Visitor::visit(Arguments *args)
 {
-    ;
-
+    printf(" ");
+    for (Expression *expr : args->get_expression_list()){
+        assert(expr != nullptr);
+        expr->visit(*this);
+        printf(" ");
+    }
 }
+
 void Visitor::visit(IdentifierNode *ident)
 {
     printf(" ");
-    ident->get_id_type()->visit(*this);
-    printf(" %s ", ident->id.c_str());
+    printf("%s ", ident->id.c_str());
 }
 
+void Visitor::visit(VectorVariable *vec_var)
+{
+    printf("(INDEX ");
+    vec_var->get_id_type()->visit(*this);
+    printf(" %s ", vec_var->id.c_str());
+    printf("%d", vec_var->vector_index);
 
-
-
+}

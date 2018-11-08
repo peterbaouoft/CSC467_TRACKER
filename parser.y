@@ -175,7 +175,7 @@ statement
     | WHILE LEFT_PARENTHESIS expression RIGHT_PARENTHESIS statement                             %prec FUNCTION_CALL {yTRACE("statement: -> WHILE LEFT_PARENTHESIS expression RIGHT_PARENTHESIS statement");}
     | scope                                                                                                         {$$ = ast_allocate(NESTED_SCOPE_NODE, $1);
                                                                                                                      yTRACE("statement: -> scope");}
-    | SEMICOLON                                                                                                     {$$ = NULL;
+    | SEMICOLON                                                                                                     {$$ = ast_allocate(EMPTY_STATEMENT_NODE);
                                                                                                                      yTRACE("statement: -> SEMICOLON");}
     ;
 else_statement
@@ -242,7 +242,7 @@ expression
 variable
     : ID                                                                                                            {$$ = ast_allocate(IDENTIFIER_NODE, yylval.as_id); /* Will this one work tho */
                                                                                                                      yTRACE("variable: -> ID");}
-    | ID LEFT_BRACKET INT RIGHT_BRACKET                                                     %prec VECTOR_SUBSCRIPT  {$$ = ast_allocate(VECTOR_NODE, yylval.as_id, yylval.as_int);
+    | ID LEFT_BRACKET INT RIGHT_BRACKET                                                     %prec VECTOR_SUBSCRIPT  {$$ = ast_allocate(VECTOR_NODE, $1, yylval.as_int);
                                                                                                                      yTRACE("variable: -> ID LEFT_BRACKET INT RIGHT_BRACKET");}
     ;
 
@@ -271,7 +271,7 @@ arguments_opt
 arguments
     : arguments COMMA expression                                                                                    {$$ = ast_allocate(ARGUMENTS_NODE, $1, $3);
                                                                                                                      yTRACE("arguments: -> arguments COMMA expression");}
-    | expression                                                                                                    {$$ = ast_allocate(ARGUMENTS_NODE, $$, $1);
+    | expression                                                                                                    {$$ = ast_allocate(ARGUMENTS_NODE, NULL, $1);
                                                                                                                      yTRACE("arguments: -> expression");}
     ;
 
