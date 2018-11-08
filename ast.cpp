@@ -79,10 +79,11 @@ class Scope : public Node
 /*=========================Beginning of STATEMENT class===================================*/
 class Statements : public Node
 {
-
-  public:
+  private:
     vector<Statement *> statement_list;
+  public:
 
+    const vector<Statement *> &get_statement_list() const {return statement_list;}
     virtual void push_back_statement(Statement *stmt) { statement_list.push_back(stmt); }
     virtual void visit(Visitor &visitor)
     {
@@ -222,8 +223,8 @@ class UnaryExpression : public Node
     Expression *right_expression;
 
   public:
-    Type *get_unary_expr_type() {return type;}
-    void  set_unary_expr_type(Type *t) { if(t) type = t;}
+    Type *get_unary_expr_type() const {return type;}
+    void  set_unary_expr_type(Type *t) { assert(t); type = t;}
 
     UnaryExpression(int op, Expression *rhs_expression) : operator_type(op), right_expression(rhs_expression) {}
     virtual void visit(Visitor &visitor)
@@ -236,12 +237,13 @@ class BinaryExpression : public UnaryExpression
 {
   private:
     Type *type;
+
   public:
     Expression *left_expression;
 
   public:
-    Type *get_binary_expr_type() {return type;}
-    void  set_binary_expr_type(Type *t) { if(t) type = t;}
+    Type *get_binary_expr_type() const {return type;}
+    void  set_binary_expr_type(Type *t) { assert(t); type = t;}
 
     BinaryExpression(int op, Expression *rhs_expression, Expression *lhs_expression) :
         UnaryExpression(op, rhs_expression), left_expression(lhs_expression) {}
@@ -259,7 +261,7 @@ class Function : public Node
     string function_name;
     Arguments *arguments;
 
-
+    Function(string func_name, Arguments *args) : function_name(func_name), arguments(args) {}
     virtual void visit(Visitor &visitor)
     {
         visitor.visit(this);
@@ -281,24 +283,33 @@ class Constructor : public Node
 
 class Arguments : public Node
 {
+  private:
+    vector<Expression *> m_expression_list;
   public:
-    vector<Expression *> expression_list;
+
+    const vector<Expression *> &get_expression_list() const { return m_expression_list; }
 
     virtual void visit(Visitor &visitor)
     {
         visitor.visit(this);
     };
 
-    virtual void push_back_expression(Expression *expression) {expression_list.push_back(expression);}
+    virtual void push_back_expression(Expression *expression) {m_expression_list.push_back(expression);}
 };
 
 class IdentifierNode : public Node
 {
+  private:
+    Type *type;
+
   public:
-    Type *type; /* Todo, move this to private member */
+    Type *get_id_type() const {return type;}
+    void set_id_type(Type *t) {assert(t); type = t;}
+
+  public:
     string id;
 
-    IdentifierNode(Type *t, string identifier) : type(t), id(identifier) {}
+    IdentifierNode(string identifier) : id(identifier) {}
     virtual void visit(Visitor &visitor)
     {
         visitor.visit(this);
@@ -366,7 +377,7 @@ node *ast_allocate(NodeKind type, ...)
     case DECLARATION_NODE:
     {
         Type *type = va_arg(args, Type *);
-        string id = static_cast<string>(va_arg(args, char *));
+        string id(va_arg(args, char *));
         Expression *expression = va_arg(args, Expression *);
         bool is_const = static_cast<bool>(va_arg(args, int));
 
@@ -534,6 +545,10 @@ node *ast_allocate(NodeKind type, ...)
     case FUNCTION_NODE:
     {
         /* Need to think about arguments null or non-null case */
+        char *func_name = va_arg(args, char*);
+        string function_name(func_name); /* The func name can not be null, thus directly cast */
+        Arguments *arguments = va_arg(args, Arguments*);
+        ret_node = new Function(function_name, arguments);
         break;
     }
 
@@ -546,12 +561,27 @@ node *ast_allocate(NodeKind type, ...)
         break;
     }
 
+    case ARGUMENTS_NODE:
+    {
+        Arguments *arguments = va_arg(args, Arguments*);
+        if (arguments == nullptr){
+            arguments = new Arguments();
+        }
+        Expression *expression = va_arg(args, Expression*); /* Expression can not be null */
+        arguments->push_back_expression(expression);
+
+        ret_node = arguments;
+        break;
+    }
+
     case IDENTIFIER_NODE:
     {
         Type *type = new Type("ANY_TYPE");
         string id = static_cast<string>(va_arg(args, char *));
+        IdentifierNode *id_node = new IdentifierNode(id);
+        id_node->set_id_type(type);
 
-        ret_node = new IdentifierNode(type, id);
+        ret_node = id_node;
         break;
     }
 
@@ -606,7 +636,7 @@ void Visitor::visit(Type *type)
 void Visitor::visit(Statements *stmts)
 {
     printf("(STATEMENTS");
-    for (Statement *stmt : stmts->statement_list)
+    for (Statement *stmt : stmts->get_statement_list())
     {
         assert(stmt != nullptr);
         stmt->visit(*this);
@@ -680,13 +710,19 @@ void Visitor::visit(UnaryExpression *ue)
 void Visitor::visit(BinaryExpression *be)
 {
     printf("(BINARY");
-    be->get_binary_expr_type()->visit(*this);
+    Type *t = be->get_binary_expr_type();
+    t->visit(*this);
     printf(""); /*Fill in operator information */
     be->left_expression->visit(*this);
     be->right_expression->visit(*this);
     printf(")");
 }
 
+
+void Visitor::visit(Function *func)
+{
+    ;
+}
 void Visitor::visit(Constructor *ct)
 {
     printf("(CALL");
@@ -694,10 +730,16 @@ void Visitor::visit(Constructor *ct)
     ct->args->visit(*this);
     printf(")");
 }
+
+void Visitor::visit(Arguments *args)
+{
+    ;
+
+}
 void Visitor::visit(IdentifierNode *ident)
 {
     printf(" ");
-    ident->type->visit(*this);
+    ident->get_id_type()->visit(*this);
     printf(" %s ", ident->id.c_str());
 }
 

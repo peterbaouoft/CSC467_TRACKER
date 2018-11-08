@@ -271,7 +271,7 @@ arguments_opt
 arguments
     : arguments COMMA expression                                                                                    {$$ = ast_allocate(ARGUMENTS_NODE, $1, $3);
                                                                                                                      yTRACE("arguments: -> arguments COMMA expression");}
-    | expression                                                                                                    {$$ = ast_allocate(ARGUMENTS_NODE, NULL, $1);
+    | expression                                                                                                    {$$ = ast_allocate(ARGUMENTS_NODE, $$, $1);
                                                                                                                      yTRACE("arguments: -> expression");}
     ;
 
