@@ -231,6 +231,15 @@ class UnaryExpression : public Node
     Expression *right_expression;
 
   public:
+    const char * to_string(){
+        string ret;
+        switch (operator_type){
+            case NOT:   ret = "!"; break;
+            case MINUS: ret = "-"; break;
+        }
+        return ret.c_str();
+    }
+
     Type *get_unary_expr_type() const {return type;}
     void  set_unary_expr_type(Type *t) { assert(t); type = t;}
 
@@ -735,7 +744,7 @@ void Visitor::visit(UnaryExpression *ue)
 {
     printf("(UNARY ");
     ue->get_unary_expr_type()->visit(*this);
-    printf(" OP"); /*Fill in operator information */
+    printf(ue->to_string()); /*Fill in operator information */
     ue->right_expression->visit(*this);
     printf(")\n");
 }
