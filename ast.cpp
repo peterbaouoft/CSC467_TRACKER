@@ -12,6 +12,27 @@
 
 using namespace std;
 
+std::string convert_op_to_string(int operator_type){
+    std::string ret;
+    switch (operator_type){
+        case NOT:       ret = "!";  break;
+        case MINUS:     ret = "-";  break;
+        case AND:       ret = "&&"; break;
+        case OR:        ret = "||"; break;
+        case DOUBLE_EQ: ret = "=="; break;
+        case N_EQ:      ret = "!="; break;
+        case SMALLER:   ret = "<";  break;
+        case S_EQ:      ret = "<="; break;
+        case GREATER:   ret = ">";  break;
+        case G_EQ:      ret = ">="; break;
+        case PLUS:      ret = "+";  break;
+        case TIMES:     ret = "*";  break;
+        case DIVIDE:    ret = "/";  break;
+        case CARET:     ret = "^";  break;
+    }
+    return ret;
+}
+
 /*=========================================END OF INITIAL DECLARATIONS======================*/
 
 /*=========================Beginning of STATEMENT class===================================*/
@@ -150,15 +171,6 @@ class UnaryExpression : public Node
     Expression *right_expression;
 
   public:
-    const char * to_string(){
-        string ret;
-        switch (operator_type){
-            case NOT:   ret = "!"; break;
-            case MINUS: ret = "-"; break;
-        }
-        return ret.c_str();
-    }
-
     Type *get_unary_expr_type() const {return type;}
     void  set_unary_expr_type(Type *t) { assert(t); type = t;}
 
@@ -762,7 +774,7 @@ void PrintVisitor::visit(UnaryExpression *ue)
 {
     printf("(UNARY ");
     ue->get_unary_expr_type()->visit(*this);
-    printf(ue->to_string()); /*Fill in operator information */
+    printf(" %s\n", convert_op_to_string(ue->operator_type).c_str()); /*Fill in operator information */
     ue->right_expression->visit(*this);
     printf(")\n");
 }
@@ -772,7 +784,7 @@ void PrintVisitor::visit(BinaryExpression *be)
     printf("(BINARY ");
     Type *t = be->get_binary_expr_type();
     t->visit(*this);
-    printf(" OP"); /*Fill in operator information */
+    printf(" %s\n", convert_op_to_string(be->operator_type).c_str()); /*Fill in operator information */
     be->left_expression->visit(*this);
     be->right_expression->visit(*this);
     printf(")");
