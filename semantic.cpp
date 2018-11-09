@@ -42,10 +42,46 @@ class SymbolVisitor : public Visitor
         }
 };
 
-int semantic_check(node * ast)
+
+class PostOrderVisitor : public Visitor
 {
 
+    public:
+        virtual void visit(ConstructorExpression *ce){
+
+        }
+        virtual void visit(FloatLiteralExpression *fle){
+
+        }
+        virtual void visit(BoolLiteralExpression *ble){
+
+        }
+        virtual void visit(IntLiteralExpression *ile){
+
+        }
+        virtual void visit(UnaryExpression *ue){
+
+        }
+        virtual void visit(BinaryExpression *be){
+
+        }
+        virtual void visit(VariableExpression *ve){
+
+        }
+        virtual void visit(FunctionExpression *fe){
+
+        }
+};
+
+
+int semantic_check(node * ast)
+{
+    /* This performs construction of symbol table, and scope checking */
     SymbolVisitor symbol_visitor;
     ast->visit(symbol_visitor);
-    return 0; // (issac_is_dumb)
+
+
+
+
+    return 0;
 }
