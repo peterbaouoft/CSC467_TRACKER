@@ -86,10 +86,11 @@ int main (int argc, char *argv[]) {
   if(1 == yyparse()) {
     return 0; // parse failed
   }
-
+  semantic_check(ast);
 /* Phase 3: Call the AST dumping routine if requested */
-  if (dumpAST)
-    ;// ast_print(ast);
+  if (dumpAST) {
+    ast_print(ast);
+  }
 /* Phase 4: Add code to call the code generation routine */
 /* TODO: call your code generation routine here */
   if (errorOccurred)

@@ -3,7 +3,6 @@
 #include <stdarg.h>
 #include <string>
 #include <iostream>
-#include <vector>
 #include "ast.h"
 #include "common.h"
 #include "parser.tab.h"
@@ -12,85 +11,10 @@
 #define DEBUG_PRINT_TREE 0
 
 using namespace std;
-/*========================================Initial Declarations===================*/
-class Type : public Node
-{
-  public:
-    string type_name;
 
-    Type(const string &type)
-    {
-        this->type_name = type;
-    }
-    virtual void visit(Visitor &visitor)
-    {
-        visitor.visit(this);
-    }
-};
-
-class Declaration : public Node
-{
-  public:
-    Type *type = nullptr;
-    string id;
-    Expression *initial_val = nullptr;
-    bool is_const = false;
-
-  public:
-    Declaration(Type *type, string id, Expression *init_val, bool is_const)
-    {
-        this->type = type;
-        this->id = id;
-        this->initial_val = init_val;
-        this->is_const = is_const;
-    }
-
-    virtual void visit(Visitor &visitor)
-    {
-        visitor.visit(this);
-    }
-};
-
-class Declarations : public Node
-{
-  public:
-    vector<Declaration *> declaration_list;
-
-  public:
-    virtual void push_back_declaration(Declaration *decl) { declaration_list.push_back(decl); }
-    virtual void visit(Visitor &visitor)
-    {
-        visitor.visit(this);
-    }
-};
-
-class Scope : public Node
-{
-  public:
-    Declarations *declarations = nullptr;
-    Statements *statements = nullptr;
-    virtual void visit(Visitor &visitor)
-    {
-        visitor.visit(this);
-    }
-};
 /*=========================================END OF INITIAL DECLARATIONS======================*/
 
 /*=========================Beginning of STATEMENT class===================================*/
-class Statements : public Node
-{
-  private:
-    vector<Statement *> statement_list;
-  public:
-
-    const vector<Statement *> &get_statement_list() const {return statement_list;}
-    virtual void push_back_statement(Statement *stmt) { statement_list.push_back(stmt); }
-    virtual void visit(Visitor &visitor)
-    {
-        visitor.visit(this);
-    };
-};
-
 class Statement : public Node
 {
   public:
@@ -144,11 +68,6 @@ class EmptyStatement: public Statement
 /*================END OF STATEMENT CLASS================*/
 
 /*================Start of Expression classes===========*/
-class Expression : public Node
-{
-  public:
-    ExpressionType expression_type;
-};
 
 class ConstructorExpression : public Expression
 {
@@ -314,24 +233,6 @@ class Arguments : public Node
     virtual void push_back_expression(Expression *expression) {m_expression_list.push_back(expression);}
 };
 
-class IdentifierNode : public Node
-{
-  private:
-    Type *type;
-
-  public:
-    Type *get_id_type() const {return type;}
-    void set_id_type(Type *t) {assert(t); type = t;}
-
-  public:
-    string id;
-
-    IdentifierNode(string identifier) : id(identifier) {}
-    virtual void visit(Visitor &visitor)
-    {
-        visitor.visit(this);
-    };
-};
 
 class VectorVariable : public IdentifierNode
 {
@@ -567,7 +468,6 @@ node *ast_allocate(NodeKind type, ...)
         int int_literal = va_arg(args, int);
 
         VectorVariable *vec_var = new VectorVariable(id_node, int_literal);
-        vec_var->set_id_type(new Type("ANY_TYPE"));
 
         ret_node = vec_var;
         break;
@@ -607,10 +507,8 @@ node *ast_allocate(NodeKind type, ...)
 
     case IDENTIFIER_NODE:
     {
-        Type *type = new Type("ANY_TYPE");
         string id = static_cast<string>(va_arg(args, char *));
         IdentifierNode *id_node = new IdentifierNode(id);
-        id_node->set_id_type(type);
 
         ret_node = id_node;
         break;
@@ -623,13 +521,133 @@ node *ast_allocate(NodeKind type, ...)
     return ret_node;
 }
 
+void Visitor::visit(Scope *scope)
+{
+    scope->declarations->visit(*this);
+    scope->statements->visit(*this);
+}
+
+void Visitor::visit(Declarations *decls)
+{
+    for (Declaration *declaration : decls->declaration_list)
+    {
+        declaration->visit(*this);
+    }
+}
+
+void Visitor::visit(Declaration *decl)
+{
+    decl->type->visit(*this);
+    if (decl->initial_val != nullptr) {
+        decl->initial_val->visit(*this);
+    }
+}
+
+void Visitor::visit(Type *type)
+{
+    ;
+}
+
+void Visitor::visit(Statements *stmts)
+{
+    for (Statement *stmt : stmts->get_statement_list())
+    {
+        assert(stmt != nullptr);
+        stmt->visit(*this);
+    }
+}
+
+void Visitor::visit(Statement *statement)
+{
+    ;
+}
+
+void Visitor::visit(AssignStatement *assign_stmt)
+{
+    assign_stmt->variable->visit(*this);
+    assign_stmt->expression->visit(*this);
+}
+
+void Visitor::visit(IfStatement *if_statement)
+{
+    if_statement->expression->visit(*this);
+    if_statement->statement->visit(*this);
+    if (if_statement->else_statement){
+        if_statement->else_statement->visit(*this);
+    }
+}
+
+void Visitor::visit(NestedScope *ns)
+{
+    ns->scope->visit(*this);
+}
+
+void Visitor::visit(EmptyStatement *es)
+{
+    ;
+}
+void Visitor::visit(ConstructorExpression *ce)
+{
+    ce->constructor->visit(*this);
+}
+
+void Visitor::visit(FloatLiteralExpression *fle)
+{
+    ;
+}
+
+void Visitor::visit(BoolLiteralExpression *ble) {
+    ;
+}
+void Visitor::visit(IntLiteralExpression *ile) {
+    ;
+}
+void Visitor::visit(UnaryExpression *ue) {
+    ue->get_unary_expr_type()->visit(*this);
+    ue->right_expression->visit(*this);
+}
+void Visitor::visit(BinaryExpression *be) {
+    Type *t = be->get_binary_expr_type();
+    t->visit(*this);
+    be->left_expression->visit(*this);
+    be->right_expression->visit(*this);
+}
+void Visitor::visit(VariableExpression *ve) {
+    ve->id_node->visit(*this);
+}
+void Visitor::visit(FunctionExpression *fe) {
+    fe->function->visit(*this);
+}
+
+void Visitor::visit(Function *func) {
+    func->arguments->visit(*this);
+}
+
+void Visitor::visit(Constructor *ct) {
+    ct->type->visit(*this);
+    ct->args->visit(*this);
+}
+void Visitor::visit(Arguments *args) {
+    for (Expression *expr : args->get_expression_list()){
+        assert(expr != nullptr);
+        expr->visit(*this);
+    }
+}
+void Visitor::visit(IdentifierNode *var) {
+    ;
+}
+void Visitor::visit(VectorVariable *vec_var) {
+    vec_var->get_id_type()->visit(*this);
+}
+
+
 void ast_print(node *root)
 {
-    Visitor visitor;
+    PrintVisitor visitor;
     root->visit(visitor);
 }
 /*===============================================VISITORS=====================================*/
-void Visitor::visit(Scope *scope)
+void PrintVisitor::visit(Scope *scope)
 {
     printf("(SCOPE \n");
     scope->declarations->visit(*this);
@@ -638,7 +656,7 @@ void Visitor::visit(Scope *scope)
     printf(")\n");
 }
 
-void Visitor::visit(Declarations *decl)
+void PrintVisitor::visit(Declarations *decl)
 {
     printf("(DECLARATIONS ");
     for (Declaration *declaration : decl->declaration_list)
@@ -648,7 +666,7 @@ void Visitor::visit(Declarations *decl)
     }
     printf(") ");
 }
-void Visitor::visit(Declaration *decl)
+void PrintVisitor::visit(Declaration *decl)
 {
     printf("(DECLARATION ");
     assert(decl->type);
@@ -661,12 +679,12 @@ void Visitor::visit(Declaration *decl)
     printf(") ");
 }
 
-void Visitor::visit(Type *type)
+void PrintVisitor::visit(Type *type)
 {
     cout << type->type_name;
 }
 
-void Visitor::visit(Statements *stmts)
+void PrintVisitor::visit(Statements *stmts)
 {
     printf("(STATEMENTS");
     for (Statement *stmt : stmts->get_statement_list())
@@ -677,11 +695,11 @@ void Visitor::visit(Statements *stmts)
     printf(")");
 }
 
-void Visitor::visit(Statement *stmt) {
+void PrintVisitor::visit(Statement *stmt) {
     assert(0);
 }
 
-void Visitor::visit(AssignStatement *assign_stmt)
+void PrintVisitor::visit(AssignStatement *assign_stmt)
 {
     printf("(ASSIGN");
     assign_stmt->variable->visit(*this);
@@ -689,7 +707,7 @@ void Visitor::visit(AssignStatement *assign_stmt)
     printf(")");
 }
 
-void Visitor::visit(IfStatement *if_statement)
+void PrintVisitor::visit(IfStatement *if_statement)
 {
     printf("(IF ");
     if_statement->expression->visit(*this);
@@ -701,46 +719,46 @@ void Visitor::visit(IfStatement *if_statement)
     printf(")");
 }
 
-void Visitor::visit(NestedScope *ns)
+void PrintVisitor::visit(NestedScope *ns)
 {
     ns->scope->visit(*this);
 }
 
-void Visitor::visit(EmptyStatement *es)
+void PrintVisitor::visit(EmptyStatement *es)
 {
     ;
 }
 
-void Visitor::visit(FunctionExpression *fe)
+void PrintVisitor::visit(FunctionExpression *fe)
 {
     fe->function->visit(*this);
 }
-void Visitor::visit(VariableExpression *ve)
+void PrintVisitor::visit(VariableExpression *ve)
 {
     ve->id_node->visit(*this);
 }
 
-void Visitor::visit(ConstructorExpression *ce)
+void PrintVisitor::visit(ConstructorExpression *ce)
 {
 
     ce->constructor->visit(*this);
 }
-void Visitor::visit(IntLiteralExpression *ile)
+void PrintVisitor::visit(IntLiteralExpression *ile)
 {
     printf("%d", ile->int_literal);
 }
 
-void Visitor::visit(BoolLiteralExpression *ble)
+void PrintVisitor::visit(BoolLiteralExpression *ble)
 {
     printf("%s", (ble->bool_literal? "true" : "false"));
 }
 
-void Visitor::visit(FloatLiteralExpression *fle)
+void PrintVisitor::visit(FloatLiteralExpression *fle)
 {
     printf("%f", fle->float_literal);
 }
 
-void Visitor::visit(UnaryExpression *ue)
+void PrintVisitor::visit(UnaryExpression *ue)
 {
     printf("(UNARY ");
     ue->get_unary_expr_type()->visit(*this);
@@ -749,7 +767,7 @@ void Visitor::visit(UnaryExpression *ue)
     printf(")\n");
 }
 
-void Visitor::visit(BinaryExpression *be)
+void PrintVisitor::visit(BinaryExpression *be)
 {
     printf("(BINARY ");
     Type *t = be->get_binary_expr_type();
@@ -761,7 +779,7 @@ void Visitor::visit(BinaryExpression *be)
 }
 
 
-void Visitor::visit(Function *func)
+void PrintVisitor::visit(Function *func)
 {
     printf("(CALL");
     printf(" %s", func->function_name.c_str());
@@ -769,7 +787,7 @@ void Visitor::visit(Function *func)
     printf(")");
 
 }
-void Visitor::visit(Constructor *ct)
+void PrintVisitor::visit(Constructor *ct)
 {
     printf("(CALL ");
     ct->type->visit(*this);
@@ -777,7 +795,7 @@ void Visitor::visit(Constructor *ct)
     printf(")");
 }
 
-void Visitor::visit(Arguments *args)
+void PrintVisitor::visit(Arguments *args)
 {
     printf(" ");
     for (Expression *expr : args->get_expression_list()){
@@ -787,16 +805,26 @@ void Visitor::visit(Arguments *args)
     }
 }
 
-void Visitor::visit(IdentifierNode *ident)
+void PrintVisitor::visit(IdentifierNode *ident)
 {
     printf(" ");
     printf("%s ", ident->id.c_str());
+    #ifdef DEBUG_PRINT_TREE
+        Type *type = ident->get_id_type();
+        if (type)
+            printf("%s", type->type_name.c_str());
+        else
+            printf("ANY_TYPE");
+    #endif
 }
 
-void Visitor::visit(VectorVariable *vec_var)
+void PrintVisitor::visit(VectorVariable *vec_var)
 {
     printf("(INDEX ");
-    vec_var->get_id_type()->visit(*this);
+    if (vec_var->get_id_type() == nullptr)
+        printf(" ANY_TYPE");
+    else
+        vec_var->get_id_type()->visit(*this);
     printf(" %s ", vec_var->id.c_str());
     printf("%d", vec_var->vector_index);
 
