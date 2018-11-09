@@ -1,3 +1,10 @@
+# Lab 3 Roadmap
+1: Semantic Analysis (all of the listed items and its rules)
+2: Symbol table construction 
+3: The leftover bits from AST (mainly expression node, and remaining visitor functions
+for implementation, you can refer to the earlier implementations):
+4: Error reporting
+
 # Lab 2 Roadmap
 Khoi:
 Peter:

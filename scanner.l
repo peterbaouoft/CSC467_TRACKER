@@ -5,6 +5,7 @@
 
 
 #include "common.h"
+#include "ast.h"
 #include "parser.tab.h"
 #include "string.h"
 #include <stdlib.h>
@@ -172,6 +173,9 @@ int process_id(){
     if (strlen(yytext) > 32){
         yERROR("Size of ID > 32");
     }
+    /* Save the id as one of the fields */
+    strcpy(yylval.as_id, yytext);
+
     return 0;
 }
 

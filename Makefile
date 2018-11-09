@@ -21,12 +21,13 @@
 ###########################################################################
 # Compiler and Compiler Flags
 ###########################################################################
-CC      =g++
-CFLAGS  =-g -O0 -Wall
-LDLIBS  =
+CC = g++
+CFLAGS =-g -O0 -Wall
+CXX = g++
+CXXFLAGS=-g -O0 -Wall -std=c++11
 
 LEX     =flex
-LEXFLAGS=-l
+LEXFLAGS=-l # C++ compilation
 
 YACC    =bison
 YFLAGS  =-dtvy
@@ -39,10 +40,10 @@ YFLAGS  =-dtvy
 #LEXER_OBJ =handlex.o
 LEXER_OBJ =scanner.o
 PARSER_OBJ=parser.o
-#AST_OBJ   =ast.o semantic.o symbol.o
+AST_OBJ   =ast.o semantic.o symbol.o
 #CODE_OBJ  =codegen.o  
 OBJs      =compiler467.o globalvars.o $(LEXER_OBJ) \
-           $(PARSER_OBJ) $(AST_OBJ)   $(CODE_OBJ)
+           $(PARSER_OBJ) $(AST_OBJ)   
 
 ###########################################################################
 #	PHONY rules
