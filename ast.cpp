@@ -6,7 +6,6 @@
 #include "ast.h"
 #include "common.h"
 #include "parser.tab.h"
-#include <cassert>
 
 #define DEBUG_PRINT_TREE 0
 
@@ -89,120 +88,6 @@ class EmptyStatement: public Statement
 /*================END OF STATEMENT CLASS================*/
 
 /*================Start of Expression classes===========*/
-
-class ConstructorExpression : public Expression
-{
-  public:
-    Constructor *constructor;
-
-    ConstructorExpression(Constructor *ct) : constructor(ct) {}
-    virtual void visit(Visitor &visitor)
-    {
-        visitor.visit(this);
-    };
-};
-
-class FunctionExpression : public Expression
-{
-  public:
-    Function *function;
-
-    FunctionExpression(Function *func) : function(func) {}
-    virtual void visit(Visitor &visitor)
-    {
-        visitor.visit(this);
-    };
-};
-
-class VariableExpression : public Expression
-{
-  public:
-    IdentifierNode *id_node;
-
-    VariableExpression(IdentifierNode *id) : id_node(id) {}
-    virtual void visit(Visitor &visitor)
-    {
-        visitor.visit(this);
-    };
-};
-
-class IntLiteralExpression : public Expression
-{
-  public:
-    int int_literal;
-
-    IntLiteralExpression(int int_val) : int_literal(int_val) {}
-    virtual void visit(Visitor &visitor)
-    {
-        visitor.visit(this);
-    };
-};
-
-class BoolLiteralExpression : public Expression
-{
-  public:
-    bool bool_literal;
-
-    BoolLiteralExpression(bool bool_val) : bool_literal(bool_val) {}
-    virtual void visit(Visitor &visitor)
-    {
-        visitor.visit(this);
-    };
-};
-
-class FloatLiteralExpression : public Expression
-{
-  public:
-    float float_literal;
-
-    FloatLiteralExpression(float float_val) : float_literal(float_val) {}
-    virtual void visit(Visitor &visitor)
-    {
-        visitor.visit(this);
-    };
-};
-
-class UnaryExpression : public Node
-{
-  private:
-    Type *type;
-  public:
-    int operator_type;
-    Expression *right_expression;
-
-  public:
-    Type *get_unary_expr_type() const {return type;}
-    void  set_unary_expr_type(Type *t) { assert(t); type = t;}
-
-    UnaryExpression(int op, Expression *rhs_expression) : operator_type(op), right_expression(rhs_expression) {}
-    virtual void visit(Visitor &visitor)
-    {
-        visitor.visit(this);
-    };
-};
-
-class BinaryExpression : public UnaryExpression
-{
-  private:
-    Type *type;
-
-  public:
-    Expression *left_expression;
-
-  public:
-    Type *get_binary_expr_type() const {return type;}
-    void  set_binary_expr_type(Type *t) { assert(t); type = t;}
-
-    BinaryExpression(int op, Expression *rhs_expression, Expression *lhs_expression) :
-        UnaryExpression(op, rhs_expression), left_expression(lhs_expression) {}
-    virtual void visit(Visitor &visitor)
-    {
-        visitor.visit(this);
-    };
-
-
-};
-
 class Function : public Node
 {
   public:
