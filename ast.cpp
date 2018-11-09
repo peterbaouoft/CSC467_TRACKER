@@ -670,17 +670,17 @@ void PrintVisitor::visit(Scope *scope)
 
 void PrintVisitor::visit(Declarations *decl)
 {
-    printf("(DECLARATIONS ");
+    printf("\t(DECLARATIONS\n");
     for (Declaration *declaration : decl->declaration_list)
     {
         assert (declaration != nullptr);
         declaration->visit(*this);
     }
-    printf(") ");
+    printf("\t)\n");
 }
 void PrintVisitor::visit(Declaration *decl)
 {
-    printf("(DECLARATION ");
+    printf("\t\t(DECLARATION ");
     assert(decl->type);
     printf(" %s ", decl->id.c_str());
     decl->type->visit(*this);
@@ -688,7 +688,7 @@ void PrintVisitor::visit(Declaration *decl)
         printf(" ");
         decl->initial_val->visit(*this);
     }
-    printf(") ");
+    printf(")\n");
 }
 
 void PrintVisitor::visit(Type *type)
@@ -698,13 +698,13 @@ void PrintVisitor::visit(Type *type)
 
 void PrintVisitor::visit(Statements *stmts)
 {
-    printf("(STATEMENTS");
+    printf("\t(STATEMENTS\n");
     for (Statement *stmt : stmts->get_statement_list())
     {
         assert(stmt != nullptr);
         stmt->visit(*this);
     }
-    printf(")");
+    printf("\t)\n");
 }
 
 void PrintVisitor::visit(Statement *stmt) {
@@ -713,22 +713,22 @@ void PrintVisitor::visit(Statement *stmt) {
 
 void PrintVisitor::visit(AssignStatement *assign_stmt)
 {
-    printf("(ASSIGN");
+    printf("\t\t(ASSIGN");
     assign_stmt->variable->visit(*this);
     assign_stmt->expression->visit(*this);
-    printf(")");
+    printf(")\n");
 }
 
 void PrintVisitor::visit(IfStatement *if_statement)
 {
-    printf("(IF ");
+    printf("\t(IF ");
     if_statement->expression->visit(*this);
     if_statement->statement->visit(*this);
     if (if_statement->else_statement){
         printf(" ");
         if_statement->else_statement->visit(*this);
     }
-    printf(")");
+    printf("\t)\n");
 }
 
 void PrintVisitor::visit(NestedScope *ns)
@@ -774,9 +774,9 @@ void PrintVisitor::visit(UnaryExpression *ue)
 {
     printf("(UNARY ");
     ue->get_unary_expr_type()->visit(*this);
-    printf(" %s\n", convert_op_to_string(ue->operator_type).c_str()); /*Fill in operator information */
+    printf(" %s", convert_op_to_string(ue->operator_type).c_str()); /*Fill in operator information */
     ue->right_expression->visit(*this);
-    printf(")\n");
+    printf(")");
 }
 
 void PrintVisitor::visit(BinaryExpression *be)
@@ -784,7 +784,7 @@ void PrintVisitor::visit(BinaryExpression *be)
     printf("(BINARY ");
     Type *t = be->get_binary_expr_type();
     t->visit(*this);
-    printf(" %s\n", convert_op_to_string(be->operator_type).c_str()); /*Fill in operator information */
+    printf(" %s", convert_op_to_string(be->operator_type).c_str()); /*Fill in operator information */
     be->left_expression->visit(*this);
     be->right_expression->visit(*this);
     printf(")");
@@ -796,7 +796,7 @@ void PrintVisitor::visit(Function *func)
     printf("(CALL");
     printf(" %s", func->function_name.c_str());
     func->arguments->visit(*this);
-    printf(")");
+    printf(")\n");
 
 }
 void PrintVisitor::visit(Constructor *ct)
@@ -804,7 +804,7 @@ void PrintVisitor::visit(Constructor *ct)
     printf("(CALL ");
     ct->type->visit(*this);
     ct->args->visit(*this);
-    printf(")");
+    printf(")\n");
 }
 
 void PrintVisitor::visit(Arguments *args)
