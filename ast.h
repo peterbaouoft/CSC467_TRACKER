@@ -377,14 +377,14 @@ class FloatLiteralExpression : public Expression
 class UnaryExpression : public Node
 {
   private:
-    Type *type;
+    std::string type;
   public:
     int operator_type;
     Expression *right_expression;
 
   public:
-    Type *get_unary_expr_type() const {return type;}
-    void  set_unary_expr_type(Type *t) { assert(t); type = t;}
+    std::string get_unary_expr_type() const {return type;}
+    void  set_unary_expr_type(std::string t) { type = t;}
 
     UnaryExpression(int op, Expression *rhs_expression) : operator_type(op), right_expression(rhs_expression) {}
     virtual void visit(Visitor &visitor)

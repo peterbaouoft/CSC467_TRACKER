@@ -296,7 +296,7 @@ node *ast_allocate(NodeKind type, ...)
         UnaryExpression* unary_expr = new UnaryExpression(operator_type, expression);
         /* Below is done before the semantic analysis, the type value will be filled
          * in, once semantic analysis is complete */
-        unary_expr->set_unary_expr_type(new Type("ANY_TYPE"));
+        unary_expr->set_unary_expr_type("ANY_TYPE");
         ret_node = unary_expr;
         break;
     }
@@ -458,12 +458,9 @@ void Visitor::visit(IntLiteralExpression *ile) {
     ;
 }
 void Visitor::visit(UnaryExpression *ue) {
-    ue->get_unary_expr_type()->visit(*this);
     ue->right_expression->visit(*this);
 }
 void Visitor::visit(BinaryExpression *be) {
-    Type *t = be->get_binary_expr_type();
-    t->visit(*this);
     be->left_expression->visit(*this);
     be->right_expression->visit(*this);
 }
@@ -616,7 +613,8 @@ void PrintVisitor::visit(FloatLiteralExpression *fle)
 void PrintVisitor::visit(UnaryExpression *ue)
 {
     printf("(UNARY ");
-    ue->get_unary_expr_type()->visit(*this);
+    printf("%s", ue->get_unary_expr_type().c_str());
+    // ue->get_unary_expr_type()->visit(*this);
     printf(" %s", convert_op_to_string(ue->operator_type).c_str()); /*Fill in operator information */
     ue->right_expression->visit(*this);
     printf(")");

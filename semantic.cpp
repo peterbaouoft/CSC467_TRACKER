@@ -1,6 +1,9 @@
 #include <string.h>
+#include <iostream>
 #include "symbol.h"
 #include "ast.h"
+#include "common.h"
+#include "parser.tab.h"
 
 class SymbolVisitor : public Visitor
 {
@@ -110,9 +113,40 @@ class PostOrderVisitor : public Visitor
         }
 
         virtual void visit(UnaryExpression *ue){
+            /* Set types accordingly */
+            ue->right_expression->visit(*this);
 
+            std::string type = ue->get_unary_expr_type();
+            if (type == "ANY_TYPE") /* We reported earlier for any type errors */
+                return;
+
+            /* Do Operator checking */
+            int operator_type = ue->operator_type;
+            std::string base_type = get_base_type(type);
+            switch (operator_type) {
+                case NOT:
+                {
+                    if (base_type !=  "bool") {
+                        printf("Logical operators only work for boolean types\n");
+                        type = "ANY_TYPE"; /* for upper error handling */
+                    }
+                    break;
+                }
+                case MINUS:
+                {
+                    if (base_type == "bool") {
+                        printf("Arithmatic operators only work for operator types\n");
+                        type = "ANY_TYPE";
+                    }
+                }
+            }
+            ue->set_unary_expr_type(ue->right_expression->get_expression_type());
         }
+
+
         virtual void visit(BinaryExpression *be){
+
+
         }
 
         virtual void visit(VariableExpression *ve){
