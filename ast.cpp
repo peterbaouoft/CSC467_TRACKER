@@ -34,36 +34,6 @@ std::string convert_op_to_string(int operator_type){
 
 /*=========================================END OF INITIAL DECLARATIONS======================*/
 
-/*=========================Beginning of STATEMENT class===================================*/
-class Statement : public Node
-{
-  public:
-    virtual void visit(Visitor &visitor) = 0;
-};
-
-class AssignStatement : public Statement
-{
-  public:
-    IdentifierNode *variable = nullptr;
-    Expression *expression = nullptr;
-    virtual void visit(Visitor &visitor)
-    {
-        visitor.visit(this);
-    };
-};
-
-class IfStatement : public Statement
-{
-  public:
-    Expression *expression = nullptr;
-    Statement *statement = nullptr;
-    Statement *else_statement = nullptr;
-
-    virtual void visit(Visitor &visitor)
-    {
-        visitor.visit(this);
-    };
-};
 
 class NestedScope : public Statement
 {

@@ -40,7 +40,42 @@ class SymbolVisitor : public Visitor
                 var->set_declaration(declaration);
             }
         }
+
+        virtual void visit(VectorVariable *vec_var)
+        {
+            Declaration *declaration = m_symbol_table.find_symbol(vec_var->id);
+
+            if (declaration == nullptr){
+                printf("Error: Missing declaration for symbol %s\n", vec_var->id.c_str());
+            }
+            else {
+                vec_var->set_declaration(declaration);
+            }
+        }
 };
+
+
+int get_type_dimension (const std::string &type){
+    if (type == "bvec2" || type == "ivec2" || type == "vec2")
+        return 2;
+    else if (type == "vec3" || type == "ivec3" || type == "bvec3")
+        return 3;
+    else if (type == "ivec4" || type == "bvec4" || type == "vec4")
+        return 4;
+    else
+        return 1;
+}
+
+std::string get_base_type (const std::string &type){
+    if (type == "bvec2" || type == "bvec3" || type == "bvec4")
+        return "bool";
+    else if (type == "vec2" || type == "vec3" || type == "vec4")
+        return "float";
+    else if (type == "ivec2" || type == "ivec3" || type == "ivec4")
+        return "int";
+    else
+        return type;
+}
 
 
 class PostOrderVisitor : public Visitor
@@ -85,11 +120,37 @@ class PostOrderVisitor : public Visitor
         }
         virtual void visit(BinaryExpression *be){
         }
+
         virtual void visit(VariableExpression *ve){
 
         }
         virtual void visit(FunctionExpression *fe){
 
+        }
+
+        virtual void visit(AssignStatement *assign_stmt){
+
+            std::string rhs_type = assign_stmt->expression->get_expression_type ();
+            std::string lhs_type = "ANY_TYPE" ;
+            if(rhs_type == "ANY_TYPE" || lhs_type == "ANY_TYPE"){
+                printf("Error: Expression or Variable is not evaluated to any supported type\n"); // Put line number
+                return;
+            }
+            if (rhs_type != lhs_type) {
+                printf("Error: Can not assign a different type expression to a variable"); // Put line number
+                return;
+            }
+        }
+
+        virtual void visit(IfStatement *if_statement) {
+            /* You perform type inference by visiting other ones first */
+            if_statement->expression->visit(*this);
+            if_statement->statement->visit(*this);
+            if (if_statement->else_statement){
+                if_statement->else_statement->visit(*this);
+            }
+            if (if_statement->expression->get_expression_type() != "bool")
+              printf("Error: Condition has to be a type of boolean\n"); // Put line numbers in
         }
 };
 

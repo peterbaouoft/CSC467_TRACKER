@@ -152,6 +152,15 @@ class Node
     virtual void visit(Visitor &vistor) = 0;
 };
 
+class Expression : public Node
+{
+  private:
+    std::string type;
+  public:
+    virtual const std::string get_expression_type() {return type;}
+    virtual void set_expression_type(std::string type_str) {type = type_str;}
+};
+
 class Declaration : public Node
 {
   public:
@@ -260,16 +269,39 @@ class Type : public Node
         visitor.visit(this);
     }
 };
-
-class Expression : public Node
+/*=========================Beginning of STATEMENT class===================================*/
+class Statement : public Node
 {
-  private:
-    std::string type;
   public:
-    virtual const std::string get_expression_type() {return type;}
-    virtual void set_expression_type(std::string type_str) {type = type_str;}
+    virtual void visit(Visitor &visitor) = 0;
 };
 
+class AssignStatement : public Statement
+{
+  public:
+    IdentifierNode *variable = nullptr;
+    Expression *expression = nullptr;
+    virtual void visit(Visitor &visitor)
+    {
+        visitor.visit(this);
+    };
+};
+
+class IfStatement : public Statement
+{
+  public:
+    Expression *expression = nullptr;
+    Statement *statement = nullptr;
+    Statement *else_statement = nullptr;
+
+    virtual void visit(Visitor &visitor)
+    {
+        visitor.visit(this);
+    };
+};
+
+
+/*****************************************Expression Definitions**********************/
 class ConstructorExpression : public Expression
 {
   public:
