@@ -45,8 +45,29 @@ class SymbolVisitor : public Visitor
 
 class PostOrderVisitor : public Visitor
 {
-
     public:
+        virtual void visit(VectorVariable *vv){
+            std::string type_name = vv->get_id_type()->type_name;
+
+            if(!type_name.compare("ivec2") || !type_name.compare("bvec2") || !type_name.compare("vec2") ){
+                if (vv->vector_index < 0 || vv->vector_index > 1){
+                    printf  ("Error: vector index out of bounds (vector: %s, index: %d, bound: 0-1)",
+                            vv->id.c_str(), vv->vector_index);
+                    }
+            }
+            if(!type_name.compare("ivec3") || !type_name.compare("bvec3") || !type_name.compare("vec3") ){
+                if (vv->vector_index < 0 || vv->vector_index > 2){
+                    printf  ("Error: vector index out of bounds (vector: %s, index: %d, bound: 0-1)",
+                            vv->id.c_str(), vv->vector_index);
+                    }
+            }
+            if(!type_name.compare("ivec4") || !type_name.compare("bvec4") || !type_name.compare("vec4") ){
+                if (vv->vector_index < 0 || vv->vector_index > 3){
+                    printf  ("Error: vector index out of bounds (vector: %s, index: %d, bound: 0-1)",
+                            vv->id.c_str(), vv->vector_index);
+                    }
+            }
+        }
         virtual void visit(ConstructorExpression *ce){
 
         }
@@ -63,7 +84,6 @@ class PostOrderVisitor : public Visitor
 
         }
         virtual void visit(BinaryExpression *be){
-
         }
         virtual void visit(VariableExpression *ve){
 
@@ -78,8 +98,9 @@ int semantic_check(node * ast)
 {
     /* This performs construction of symbol table, and scope checking */
     SymbolVisitor symbol_visitor;
+    PostOrderVisitor postorder_visitor;
     ast->visit(symbol_visitor);
-
+    ast->visit(postorder_visitor);
 
 
 

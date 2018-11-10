@@ -131,18 +131,6 @@ class Arguments : public Node
 };
 
 
-class VectorVariable : public IdentifierNode
-{
-  public:
-    int vector_index;
-
-    VectorVariable(string id_node, int v_index) :
-        IdentifierNode(id_node), vector_index(v_index) {}
-    virtual void visit(Visitor &visitor)
-    {
-        visitor.visit(this);
-    };
-};
 
 /*===========================End of expression classes========================*/
 
