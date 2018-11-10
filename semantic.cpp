@@ -94,6 +94,8 @@ class PostOrderVisitor : public Visitor
             if (vv->vector_index > vec_dimension || vv->vector_index < 0)
                 printf("Error: vector index out of bounds (vector: %s, index: %d, bound: 0-%d)",
                         vv->id.c_str(), vv->vector_index, vec_dimension); /* TODO: add line number */
+            std::string base_type = get_base_type(type_name);
+            vv->set_id_type(new Type(base_type)); /* Set the vector variable's type into base type */
         }
 
         virtual void visit(ConstructorExpression *ce){

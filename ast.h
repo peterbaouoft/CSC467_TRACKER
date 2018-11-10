@@ -190,8 +190,9 @@ class IdentifierNode : public Node
     Declaration *declaration = nullptr;
 
   public:
-    Type *get_id_type() const {return declaration ? declaration->type : NULL;}
+    virtual Type *get_id_type() const {return declaration ? declaration->type : NULL;}
     void set_declaration(Declaration *decl) {declaration = decl;}
+    virtual void set_id_type(Type *type) {}
 
   public:
     std::string id;
@@ -205,6 +206,8 @@ class IdentifierNode : public Node
 
 class VectorVariable : public IdentifierNode
 {
+  private:
+    Type *type = nullptr;
   public:
     int vector_index;
 
@@ -214,6 +217,14 @@ class VectorVariable : public IdentifierNode
     {
         visitor.visit(this);
     };
+
+    Type *get_id_type() const{
+        return type ?: IdentifierNode::get_id_type();
+    }
+
+    void set_id_type(Type *t) {
+        type = t;
+    }
 };
 
 
