@@ -310,7 +310,7 @@ node *ast_allocate(NodeKind type, ...)
         BinaryExpression *bin_expr = new BinaryExpression(operator_type, rhs_expr, lhs_expr);
         /* Below is done before the semantic analysis, the type value will be filled
          * in, once semantic analysis is complete */
-        bin_expr->set_binary_expr_type(new Type("ANY_TYPE"));
+        bin_expr->set_binary_expr_type("ANY_TYPE");
         ret_node = bin_expr;
         break;
     }
@@ -623,8 +623,7 @@ void PrintVisitor::visit(UnaryExpression *ue)
 void PrintVisitor::visit(BinaryExpression *be)
 {
     printf("(BINARY ");
-    Type *t = be->get_binary_expr_type();
-    t->visit(*this);
+    printf("%s",be->get_binary_expr_type().c_str());
     printf(" %s", convert_op_to_string(be->operator_type).c_str()); /*Fill in operator information */
     be->left_expression->visit(*this);
     be->right_expression->visit(*this);
