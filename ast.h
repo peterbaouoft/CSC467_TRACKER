@@ -157,7 +157,7 @@ class Expression : public Node
   private:
     std::string type;
   public:
-    virtual const std::string get_expression_type() {return type;}
+    virtual std::string get_expression_type() const {return type;}
     virtual void set_expression_type(std::string type_str) {type = type_str;}
 };
 

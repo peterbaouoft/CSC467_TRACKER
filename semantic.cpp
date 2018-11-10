@@ -67,7 +67,7 @@ int get_type_dimension (const std::string &type){
         return 1;
 }
 
-std::string get_base_type (const std::string &type){
+std::string get_base_type (const std::string type){
     if (type == "bvec2" || type == "bvec3" || type == "bvec4")
         return "bool";
     else if (type == "vec2" || type == "vec3" || type == "vec4")
@@ -94,18 +94,21 @@ class PostOrderVisitor : public Visitor
                 printf("Error: vector index out of bounds (vector: %s, index: %d, bound: 0-%d)",
                         vv->id.c_str(), vv->vector_index, vec_dimension); /* TODO: add line number */
         }
+
         virtual void visit(ConstructorExpression *ce){
 
         }
         virtual void visit(FloatLiteralExpression *fle){
-
+            fle->set_expression_type("float");
         }
         virtual void visit(BoolLiteralExpression *ble){
-
+            ble->set_expression_type("bool");
         }
+
         virtual void visit(IntLiteralExpression *ile){
-
+            ile->set_expression_type("int");
         }
+
         virtual void visit(UnaryExpression *ue){
 
         }
@@ -114,6 +117,7 @@ class PostOrderVisitor : public Visitor
 
         virtual void visit(VariableExpression *ve){
             ve->id_node->visit(*this);
+
             Type *variable_type = ve->id_node->get_id_type(); /* Note: due to the nature of parser, id_node exists by default */
             if (variable_type != nullptr){
                 std::string base_type = get_base_type(ve->id_node->get_id_type()->type_name);
@@ -125,15 +129,16 @@ class PostOrderVisitor : public Visitor
         }
 
         virtual void visit(AssignStatement *assign_stmt){
+            /* Visit the members to set the inference types */
+            assign_stmt->variable->visit(*this);
+            assign_stmt->expression->visit(*this);
 
             std::string rhs_type = assign_stmt->expression->get_expression_type ();
-            std::string lhs_type = "ANY_TYPE" ;
-            if(rhs_type == "ANY_TYPE" || lhs_type == "ANY_TYPE"){
-                printf("Error: Expression or Variable is not evaluated to any supported type\n"); // Put line number
-                return;
-            }
+            Type *temp_type = assign_stmt->variable->get_id_type();
+            std::string lhs_type =  temp_type ? temp_type->type_name : "ANY_TYPE";
+
             if (rhs_type != lhs_type) {
-                printf("Error: Can not assign a different type expression to a variable"); // Put line number
+                printf("Error: Can not assign a different type expression to a variable\n"); // Put line number
                 return;
             }
         }
