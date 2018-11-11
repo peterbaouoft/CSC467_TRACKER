@@ -381,13 +381,8 @@ class ConstructorExpression : public Expression
 
 class FunctionExpression : public Expression
 {
-  private:
-    std::string resolved_type_name;
-
   public:
     Function *function;
-
-    std::string &get_resolved_type_name(){return resolved_type_name;} 
 
     FunctionExpression(Function *func) : function(func) {}
     virtual void visit(Visitor &visitor)
