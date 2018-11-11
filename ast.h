@@ -342,7 +342,18 @@ class Arguments : public Node
     virtual void push_back_expression(Expression *expression) {m_expression_list.push_back(expression);}
 };
 
+class Function : public Node
+{
+  public:
+    std::string function_name;
+    Arguments *arguments;
 
+    Function(std::string func_name, Arguments *args) : function_name(func_name), arguments(args) {}
+    virtual void visit(Visitor &visitor)
+    {
+        visitor.visit(this);
+    };
+};
 class Constructor : public Node
 {
   public:
@@ -370,8 +381,13 @@ class ConstructorExpression : public Expression
 
 class FunctionExpression : public Expression
 {
+  private:
+    std::string resolved_type_name;
+
   public:
     Function *function;
+
+    std::string &get_resolved_type_name(){return resolved_type_name;} 
 
     FunctionExpression(Function *func) : function(func) {}
     virtual void visit(Visitor &visitor)

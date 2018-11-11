@@ -58,18 +58,7 @@ class EmptyStatement: public Statement
 /*================END OF STATEMENT CLASS================*/
 
 /*================Start of Expression classes===========*/
-class Function : public Node
-{
-  public:
-    string function_name;
-    Arguments *arguments;
 
-    Function(string func_name, Arguments *args) : function_name(func_name), arguments(args) {}
-    virtual void visit(Visitor &visitor)
-    {
-        visitor.visit(this);
-    };
-};
 
 
 

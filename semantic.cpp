@@ -203,6 +203,61 @@ class PostOrderVisitor : public Visitor
         virtual void visit(Function *f){
         }
 
+        virtual void visit(FunctionExpression *fe){
+            std::string function_name = fe->function->function_name;
+            std::vector<Expression *> args = fe->function->arguments->get_expression_list();
+            bool has_error = false;
+            if (function_name == "rsq"){
+                if (args.size() != 1){
+                    has_error = true;
+                    printf("\nError: rsq function has %d argument (only 1 allowed)\n", (int)args.size());
+                }
+                for(int i=0; i<(int)args.size(); i++){
+                    std::string type = args[i]->get_expression_type();
+                    if (type != "int" || type != "float"){
+                        has_error = true;
+                        printf("Error: rsq function has %s type as argument (only int/float allowed)\n", type.c_str());
+                    }
+                }
+                if (!has_error){
+                    fe->get_resolved_type_name() = "float";
+                }
+            }
+            if (function_name == "dp3"){
+                if (args.size() != 2){
+                    has_error = true;
+                    printf("\nError: rsq function has %d argument (only 2 allowed)\n", (int)args.size());
+                }
+                for(int i=0; i<(int)args.size(); i++){
+                    std::string type = args[i]->get_expression_type();
+                    if (type != "vec3" || type != "vec4" || type != "ivec3" || type != "ivec4"){
+                        has_error = true;
+                        printf ("Error: dp3 function has %s type as argument (only vec3/vec4/ivec3/ivec4 allowed)", 
+                                type.c_str());
+                    }
+                }
+                if (!has_error){
+                    fe->get_resolved_type_name() = "float";
+                }
+            }
+            if (function_name == "lit"){
+                if (args.size() != 1){
+                    has_error = true;
+                    printf("\nError: lit function has %d argument (only 1 allowed)\n", (int)args.size());
+                }
+                for(int i=0; i<(int)args.size(); i++){
+                    std::string type = args[i]->get_expression_type();
+                    if (type != "vec4"){
+                        has_error = true;
+                        printf("Error: lit function has %s type as argument (only vec4 allowed)\n", type.c_str());
+                    }
+                }
+                if (!has_error){
+                    fe->get_resolved_type_name() = "vec4";
+                }
+            }
+        }
+
         virtual void visit(FloatLiteralExpression *fle){
             fle->set_expression_type("float");
         }
@@ -378,10 +433,6 @@ class PostOrderVisitor : public Visitor
                 ve->set_expression_type(variable_type->type_name); /* TODO: think about base type.. when printing */
             }
         }
-        virtual void visit(FunctionExpression *fe){
-
-        }
-
         virtual void visit(AssignStatement *assign_stmt){
             /* Visit the members to set the inference types */
             assign_stmt->variable->visit(*this);
