@@ -136,14 +136,17 @@ class PostOrderVisitor : public Visitor
             vv->set_id_type(new Type(base_type)); /* Set the vector variable's type into base type */
         }
         virtual void visit(ConstructorExpression *ce){
+            ce->constructor->visit(*this);
             std::string type = ce->constructor->type->type_name;
             std::string base_type = get_base_type (ce->constructor->type->type_name);
             std::vector<Expression *> expression_list = ce->constructor->args->get_expression_list();
             int type_dimension = get_type_dimension (type);
+
             // check dimension
             if (type_dimension != (int)expression_list.size()){
                 printf ("\nError: number of arguments (%d) doesn't match type dimension (%d)\n",
                         type_dimension, (int)expression_list.size());
+                return; /* We might want to have early returns, as, we don't want to report too many errors ?\n */
             }
             // check type
             for (int i=0; i< (int)expression_list.size(); i++){
@@ -154,8 +157,10 @@ class PostOrderVisitor : public Visitor
                 }
             }
         }
+
         virtual void visit(Function *f){
-                    }
+        }
+
         virtual void visit(FloatLiteralExpression *fle){
             fle->set_expression_type("float");
         }
