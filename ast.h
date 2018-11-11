@@ -302,6 +302,36 @@ class IfStatement : public Statement
 
 
 /*****************************************Expression Definitions**********************/
+class Arguments : public Node
+{
+  private:
+    std::vector<Expression *> m_expression_list;
+  public:
+
+    const std::vector<Expression *> &get_expression_list() const { return m_expression_list; }
+
+    virtual void visit(Visitor &visitor)
+    {
+        visitor.visit(this);
+    };
+
+    virtual void push_back_expression(Expression *expression) {m_expression_list.push_back(expression);}
+};
+
+
+class Constructor : public Node
+{
+  public:
+    Type *type;
+    Arguments *args;
+
+    Constructor (Type *t, Arguments *arguments) : type(t), args(arguments) {}
+    virtual void visit(Visitor &visitor)
+    {
+        visitor.visit(this);
+    };
+};
+
 class ConstructorExpression : public Expression
 {
   public:

@@ -4,6 +4,7 @@
 #include "ast.h"
 #include "common.h"
 #include "parser.tab.h"
+#include <vector>
 
 int get_type_dimension (const std::string &type){
     if (type == "bvec2" || type == "ivec2" || type == "vec2")
@@ -95,9 +96,24 @@ class PostOrderVisitor : public Visitor
                 printf("Error: vector index out of bounds (vector: %s, index: %d, bound: 0-%d)",
                         vv->id.c_str(), vv->vector_index, vec_dimension); /* TODO: add line number */
         }
-
         virtual void visit(ConstructorExpression *ce){
-
+            std::string type = ce->constructor->type->type_name;
+            std::string base_type = get_base_type (ce->constructor->type->type_name);
+            std::vector<Expression *> expression_list = ce->constructor->args->get_expression_list();
+            int type_dimension = get_type_dimension (type);
+            // check dimension
+            if (type_dimension != (int)expression_list.size()){
+                printf ("\nError: number of arguments (%d) doesn't match type dimension (%d)\n",
+                        type_dimension, (int)expression_list.size());
+            }
+            // check type
+            for (int i=0; i< (int)expression_list.size(); i++){
+                std::string arg_type = expression_list[i]->get_expression_type();
+                if (arg_type != base_type){
+                    printf ("Error line %d: argument type (%s) and constructor type (%s) mismatch\n",
+                            yyline, arg_type.c_str(), base_type.c_str());
+                }
+            }
         }
         virtual void visit(FloatLiteralExpression *fle){
             fle->set_expression_type("float");
