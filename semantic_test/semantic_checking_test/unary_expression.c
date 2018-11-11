@@ -1,8 +1,10 @@
 {
     int c;
+    ivec2 h;
+    bool d;
     bool a = true;
-    bool b = !a;
+    bool b = c == h[0];
 
-    bool d = -a; /* Error due to not arithmetic and type mismatch */
-    bool e = !c;
+    if (b)
+        ;
 }

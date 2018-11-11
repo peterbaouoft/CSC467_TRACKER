@@ -439,17 +439,13 @@ class FloatLiteralExpression : public Expression
     };
 };
 
-class UnaryExpression : public Node
+class UnaryExpression : public Expression
 {
-  private:
-    std::string type = "ANY_TYPE"; /* default to any type */
   public:
     int operator_type;
     Expression *right_expression;
 
   public:
-    std::string get_unary_expr_type() const {return type;}
-    void  set_unary_expr_type(std::string t) { type = t;}
 
     UnaryExpression(int op, Expression *rhs_expression) : operator_type(op), right_expression(rhs_expression) {}
     virtual void visit(Visitor &visitor)
@@ -460,15 +456,10 @@ class UnaryExpression : public Node
 
 class BinaryExpression : public UnaryExpression
 {
-  private:
-    std::string type = "ANY_TYPE";
-
   public:
     Expression *left_expression;
 
   public:
-    std::string get_binary_expr_type() const {return type;}
-    void  set_binary_expr_type(std::string t) { type = t;}
 
     BinaryExpression(int op, Expression *rhs_expression, Expression *lhs_expression) :
         UnaryExpression(op, rhs_expression), left_expression(lhs_expression) {}

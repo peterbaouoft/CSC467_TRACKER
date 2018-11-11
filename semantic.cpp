@@ -295,7 +295,7 @@ class PostOrderVisitor : public Visitor
                     break;
                 }
             }
-            ue->set_unary_expr_type(type);
+            ue->set_expression_type(type);
         }
 
 
@@ -343,7 +343,7 @@ class PostOrderVisitor : public Visitor
                     return;
                 }
                 ret_type = lhs_expr_type; /* Either left or right expression is a match */
-                be->set_binary_expr_type(ret_type);
+                be->set_expression_type(ret_type);
                 return;
             }
 
@@ -411,7 +411,7 @@ class PostOrderVisitor : public Visitor
                 return;
             }
 
-            be->set_binary_expr_type(ret_type);
+            be->set_expression_type(ret_type);
         }
 
         virtual void visit(VariableExpression *ve){
