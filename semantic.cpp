@@ -204,6 +204,9 @@ class PostOrderVisitor : public Visitor
         }
 
         virtual void visit(FunctionExpression *fe){
+            fe->function->visit(*this);
+            fe->function->arguments->visit(*this);
+
             std::string function_name = fe->function->function_name;
             std::vector<Expression *> args = fe->function->arguments->get_expression_list();
             bool has_error = false;
