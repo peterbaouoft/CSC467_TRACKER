@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string>
 #include <vector>
+#include <cassert>
 
 /**************************************************************************
  *                              FORWARD DECLARATIONS                      *
@@ -151,13 +152,25 @@ class Node
     virtual void visit(Visitor &vistor) = 0;
 };
 
+class Expression : public Node
+{
+  private:
+    std::string type;
+  public:
+    virtual std::string get_expression_type() const {return type;}
+    virtual void set_expression_type(std::string type_str) {type = type_str;}
+};
+
 class Declaration : public Node
 {
+  private:
+    bool is_const = false;
+    bool is_read_only = false;
+    bool is_write_only = false;
   public:
     Type *type = nullptr;
     std::string id;
     Expression *initial_val = nullptr;
-    bool is_const = false;
 
   public:
     Declaration(Type *type, const std::string &id, Expression *init_val, bool is_const)
@@ -172,6 +185,14 @@ class Declaration : public Node
     {
         visitor.visit(this);
     }
+
+    bool get_is_const() const {return is_const;}
+    void set_is_const(const bool &const_val) { is_const = const_val;}
+    bool get_is_read_only() const {return is_read_only;}
+    void set_is_read_only(const bool &read_only_val) { is_read_only = read_only_val;}
+    bool get_is_write_only() const {return is_write_only;}
+    void set_is_write_only(const bool &write_only_val) { is_write_only = write_only_val;}
+
 };
 
 class IdentifierNode : public Node
@@ -180,8 +201,10 @@ class IdentifierNode : public Node
     Declaration *declaration = nullptr;
 
   public:
-    Type *get_id_type() const {return declaration ? declaration->type : NULL;}
+    virtual Type *get_id_type() const {return declaration ? declaration->type : NULL;}
     void set_declaration(Declaration *decl) {declaration = decl;}
+    virtual Declaration *get_declaration() const {return declaration;}
+    virtual void set_id_type(Type *type) {}
 
   public:
     std::string id;
@@ -192,6 +215,30 @@ class IdentifierNode : public Node
         visitor.visit(this);
     };
 };
+
+class VectorVariable : public IdentifierNode
+{
+  private:
+    Type *type = nullptr;
+  public:
+    int vector_index;
+
+    VectorVariable(std::string id_node, int v_index) :
+        IdentifierNode(id_node), vector_index(v_index) {}
+    virtual void visit(Visitor &visitor)
+    {
+        visitor.visit(this);
+    };
+
+    Type *get_id_type() const{
+        return type ?: IdentifierNode::get_id_type();
+    }
+
+    void set_id_type(Type *t) {
+        type = t;
+    }
+};
+
 
 class Scope : public Node
 {
@@ -211,6 +258,7 @@ class Declarations : public Node
 
   public:
     virtual void push_back_declaration(Declaration *decl) { declaration_list.push_back(decl); }
+    virtual void push_front_declaration(Declaration *decl) { declaration_list.insert(declaration_list.begin(), decl);}
     virtual void visit(Visitor &visitor)
     {
         visitor.visit(this);
@@ -245,13 +293,179 @@ class Type : public Node
         visitor.visit(this);
     }
 };
-
-class Expression : public Node
+/*=========================Beginning of STATEMENT class===================================*/
+class Statement : public Node
 {
   public:
-    ExpressionType expression_type;
+    virtual void visit(Visitor &visitor) = 0;
 };
 
+class AssignStatement : public Statement
+{
+  public:
+    IdentifierNode *variable = nullptr;
+    Expression *expression = nullptr;
+    virtual void visit(Visitor &visitor)
+    {
+        visitor.visit(this);
+    };
+};
+
+class IfStatement : public Statement
+{
+  public:
+    Expression *expression = nullptr;
+    Statement *statement = nullptr;
+    Statement *else_statement = nullptr;
+
+    virtual void visit(Visitor &visitor)
+    {
+        visitor.visit(this);
+    };
+};
+
+
+/*****************************************Expression Definitions**********************/
+class Arguments : public Node
+{
+  private:
+    std::vector<Expression *> m_expression_list;
+  public:
+
+    const std::vector<Expression *> &get_expression_list() const { return m_expression_list; }
+
+    virtual void visit(Visitor &visitor)
+    {
+        visitor.visit(this);
+    };
+
+    virtual void push_back_expression(Expression *expression) {m_expression_list.push_back(expression);}
+};
+
+
+class Constructor : public Node
+{
+  public:
+    Type *type;
+    Arguments *args;
+
+    Constructor (Type *t, Arguments *arguments) : type(t), args(arguments) {}
+    virtual void visit(Visitor &visitor)
+    {
+        visitor.visit(this);
+    };
+};
+
+class ConstructorExpression : public Expression
+{
+  public:
+    Constructor *constructor;
+
+    ConstructorExpression(Constructor *ct) : constructor(ct) {}
+    virtual void visit(Visitor &visitor)
+    {
+        visitor.visit(this);
+    };
+};
+
+class FunctionExpression : public Expression
+{
+  public:
+    Function *function;
+
+    FunctionExpression(Function *func) : function(func) {}
+    virtual void visit(Visitor &visitor)
+    {
+        visitor.visit(this);
+    };
+};
+
+class VariableExpression : public Expression
+{
+  public:
+    IdentifierNode *id_node;
+
+    VariableExpression(IdentifierNode *id) : id_node(id) {}
+    virtual void visit(Visitor &visitor)
+    {
+        visitor.visit(this);
+    };
+};
+
+class IntLiteralExpression : public Expression
+{
+  public:
+    int int_literal;
+
+    IntLiteralExpression(int int_val) : int_literal(int_val) {}
+    virtual void visit(Visitor &visitor)
+    {
+        visitor.visit(this);
+    };
+};
+
+class BoolLiteralExpression : public Expression
+{
+  public:
+    bool bool_literal;
+
+    BoolLiteralExpression(bool bool_val) : bool_literal(bool_val) {}
+    virtual void visit(Visitor &visitor)
+    {
+        visitor.visit(this);
+    };
+};
+
+class FloatLiteralExpression : public Expression
+{
+  public:
+    float float_literal;
+
+    FloatLiteralExpression(float float_val) : float_literal(float_val) {}
+    virtual void visit(Visitor &visitor)
+    {
+        visitor.visit(this);
+    };
+};
+
+class UnaryExpression : public Node
+{
+  private:
+    std::string type = "ANY_TYPE"; /* default to any type */
+  public:
+    int operator_type;
+    Expression *right_expression;
+
+  public:
+    std::string get_unary_expr_type() const {return type;}
+    void  set_unary_expr_type(std::string t) { type = t;}
+
+    UnaryExpression(int op, Expression *rhs_expression) : operator_type(op), right_expression(rhs_expression) {}
+    virtual void visit(Visitor &visitor)
+    {
+        visitor.visit(this);
+    };
+};
+
+class BinaryExpression : public UnaryExpression
+{
+  private:
+    std::string type = "ANY_TYPE";
+
+  public:
+    Expression *left_expression;
+
+  public:
+    std::string get_binary_expr_type() const {return type;}
+    void  set_binary_expr_type(std::string t) { type = t;}
+
+    BinaryExpression(int op, Expression *rhs_expression, Expression *lhs_expression) :
+        UnaryExpression(op, rhs_expression), left_expression(lhs_expression) {}
+    virtual void visit(Visitor &visitor)
+    {
+        visitor.visit(this);
+    };
+};
 
 node *ast_allocate(NodeKind type, ...);
 void ast_print(node *ast_root);

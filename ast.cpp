@@ -6,7 +6,6 @@
 #include "ast.h"
 #include "common.h"
 #include "parser.tab.h"
-#include <cassert>
 
 #define DEBUG_PRINT_TREE 0
 
@@ -35,36 +34,6 @@ std::string convert_op_to_string(int operator_type){
 
 /*=========================================END OF INITIAL DECLARATIONS======================*/
 
-/*=========================Beginning of STATEMENT class===================================*/
-class Statement : public Node
-{
-  public:
-    virtual void visit(Visitor &visitor) = 0;
-};
-
-class AssignStatement : public Statement
-{
-  public:
-    IdentifierNode *variable = nullptr;
-    Expression *expression = nullptr;
-    virtual void visit(Visitor &visitor)
-    {
-        visitor.visit(this);
-    };
-};
-
-class IfStatement : public Statement
-{
-  public:
-    Expression *expression = nullptr;
-    Statement *statement = nullptr;
-    Statement *else_statement = nullptr;
-
-    virtual void visit(Visitor &visitor)
-    {
-        visitor.visit(this);
-    };
-};
 
 class NestedScope : public Statement
 {
@@ -89,120 +58,6 @@ class EmptyStatement: public Statement
 /*================END OF STATEMENT CLASS================*/
 
 /*================Start of Expression classes===========*/
-
-class ConstructorExpression : public Expression
-{
-  public:
-    Constructor *constructor;
-
-    ConstructorExpression(Constructor *ct) : constructor(ct) {}
-    virtual void visit(Visitor &visitor)
-    {
-        visitor.visit(this);
-    };
-};
-
-class FunctionExpression : public Expression
-{
-  public:
-    Function *function;
-
-    FunctionExpression(Function *func) : function(func) {}
-    virtual void visit(Visitor &visitor)
-    {
-        visitor.visit(this);
-    };
-};
-
-class VariableExpression : public Expression
-{
-  public:
-    IdentifierNode *id_node;
-
-    VariableExpression(IdentifierNode *id) : id_node(id) {}
-    virtual void visit(Visitor &visitor)
-    {
-        visitor.visit(this);
-    };
-};
-
-class IntLiteralExpression : public Expression
-{
-  public:
-    int int_literal;
-
-    IntLiteralExpression(int int_val) : int_literal(int_val) {}
-    virtual void visit(Visitor &visitor)
-    {
-        visitor.visit(this);
-    };
-};
-
-class BoolLiteralExpression : public Expression
-{
-  public:
-    bool bool_literal;
-
-    BoolLiteralExpression(bool bool_val) : bool_literal(bool_val) {}
-    virtual void visit(Visitor &visitor)
-    {
-        visitor.visit(this);
-    };
-};
-
-class FloatLiteralExpression : public Expression
-{
-  public:
-    float float_literal;
-
-    FloatLiteralExpression(float float_val) : float_literal(float_val) {}
-    virtual void visit(Visitor &visitor)
-    {
-        visitor.visit(this);
-    };
-};
-
-class UnaryExpression : public Node
-{
-  private:
-    Type *type;
-  public:
-    int operator_type;
-    Expression *right_expression;
-
-  public:
-    Type *get_unary_expr_type() const {return type;}
-    void  set_unary_expr_type(Type *t) { assert(t); type = t;}
-
-    UnaryExpression(int op, Expression *rhs_expression) : operator_type(op), right_expression(rhs_expression) {}
-    virtual void visit(Visitor &visitor)
-    {
-        visitor.visit(this);
-    };
-};
-
-class BinaryExpression : public UnaryExpression
-{
-  private:
-    Type *type;
-
-  public:
-    Expression *left_expression;
-
-  public:
-    Type *get_binary_expr_type() const {return type;}
-    void  set_binary_expr_type(Type *t) { assert(t); type = t;}
-
-    BinaryExpression(int op, Expression *rhs_expression, Expression *lhs_expression) :
-        UnaryExpression(op, rhs_expression), left_expression(lhs_expression) {}
-    virtual void visit(Visitor &visitor)
-    {
-        visitor.visit(this);
-    };
-
-
-};
-
 class Function : public Node
 {
   public:
@@ -216,48 +71,9 @@ class Function : public Node
     };
 };
 
-class Constructor : public Node
-{
-  public:
-    Type *type;
-    Arguments *args;
-
-    Constructor (Type *t, Arguments *arguments) : type(t), args(arguments) {}
-    virtual void visit(Visitor &visitor)
-    {
-        visitor.visit(this);
-    };
-};
-
-class Arguments : public Node
-{
-  private:
-    vector<Expression *> m_expression_list;
-  public:
-
-    const vector<Expression *> &get_expression_list() const { return m_expression_list; }
-
-    virtual void visit(Visitor &visitor)
-    {
-        visitor.visit(this);
-    };
-
-    virtual void push_back_expression(Expression *expression) {m_expression_list.push_back(expression);}
-};
 
 
-class VectorVariable : public IdentifierNode
-{
-  public:
-    int vector_index;
 
-    VectorVariable(string id_node, int v_index) :
-        IdentifierNode(id_node), vector_index(v_index) {}
-    virtual void visit(Visitor &visitor)
-    {
-        visitor.visit(this);
-    };
-};
 
 /*===========================End of expression classes========================*/
 
@@ -453,7 +269,7 @@ node *ast_allocate(NodeKind type, ...)
         UnaryExpression* unary_expr = new UnaryExpression(operator_type, expression);
         /* Below is done before the semantic analysis, the type value will be filled
          * in, once semantic analysis is complete */
-        unary_expr->set_unary_expr_type(new Type("ANY_TYPE"));
+        unary_expr->set_unary_expr_type("ANY_TYPE");
         ret_node = unary_expr;
         break;
     }
@@ -467,7 +283,7 @@ node *ast_allocate(NodeKind type, ...)
         BinaryExpression *bin_expr = new BinaryExpression(operator_type, rhs_expr, lhs_expr);
         /* Below is done before the semantic analysis, the type value will be filled
          * in, once semantic analysis is complete */
-        bin_expr->set_binary_expr_type(new Type("ANY_TYPE"));
+        bin_expr->set_binary_expr_type("ANY_TYPE");
         ret_node = bin_expr;
         break;
     }
@@ -615,12 +431,9 @@ void Visitor::visit(IntLiteralExpression *ile) {
     ;
 }
 void Visitor::visit(UnaryExpression *ue) {
-    ue->get_unary_expr_type()->visit(*this);
     ue->right_expression->visit(*this);
 }
 void Visitor::visit(BinaryExpression *be) {
-    Type *t = be->get_binary_expr_type();
-    t->visit(*this);
     be->left_expression->visit(*this);
     be->right_expression->visit(*this);
 }
@@ -773,7 +586,8 @@ void PrintVisitor::visit(FloatLiteralExpression *fle)
 void PrintVisitor::visit(UnaryExpression *ue)
 {
     printf("(UNARY ");
-    ue->get_unary_expr_type()->visit(*this);
+    printf("%s", ue->get_unary_expr_type().c_str());
+    // ue->get_unary_expr_type()->visit(*this);
     printf(" %s", convert_op_to_string(ue->operator_type).c_str()); /*Fill in operator information */
     ue->right_expression->visit(*this);
     printf(")");
@@ -782,8 +596,7 @@ void PrintVisitor::visit(UnaryExpression *ue)
 void PrintVisitor::visit(BinaryExpression *be)
 {
     printf("(BINARY ");
-    Type *t = be->get_binary_expr_type();
-    t->visit(*this);
+    printf("%s",be->get_binary_expr_type().c_str());
     printf(" %s", convert_op_to_string(be->operator_type).c_str()); /*Fill in operator information */
     be->left_expression->visit(*this);
     be->right_expression->visit(*this);
