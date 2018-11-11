@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+
 #define YY_USER_INIT { yyin = inputFile; }
 #define	yyinput      input
 #define yTRACE(x)    { if (traceScanner) fprintf(traceFile, "TOKEN %3d : %s\n", x, yytext); }
@@ -23,9 +24,15 @@ int process_id();
 
 int CheckInt(void);
 int yyline = 1;
+int yycolumn = 1;
+
+#define YY_USER_ACTION yylloc.first_line = yylloc.last_line = yyline; \
+        yylloc.first_column = yycolumn; yylloc.last_column = yycolumn + yyleng - 1; \
+        yycolumn +=yyleng;
 
 %}
 %option noyywrap
+
 %x comment
 
 RX_WS    [ \t\r]
@@ -57,7 +64,7 @@ RX_NUMBER_ERROR [0]{RX_INT}{RX_FLOAT}?
 if                                  { yTRACE(IF); return IF; }
 else                                { yTRACE(ELSE); return ELSE;}
 
-{RX_ENTER}                          {yyline++;}
+{RX_ENTER}                          {yyline++; yycolumn = 1;}
 
 {RX_FUNC_NAMES}                     {yTRACE(FUNC_NAME); strncpy(yylval.func_name, yytext, 4) ;
                                      return (FUNC_NAME);}
@@ -159,7 +166,7 @@ const                               {yTRACE (CONST_TYPE); return (CONST_TYPE);}
 
 "/*"                                {BEGIN(comment);}
 
-<comment>\n                         {yyline++;}
+<comment>\n                         {yyline++; yycolumn = 1;}
 <comment>[^*\n]*                    {;}
 <comment>"*"+[^*/\n]*               {;}
 <comment>"*"+"/"                    {BEGIN(INITIAL);}

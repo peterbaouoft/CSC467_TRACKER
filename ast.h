@@ -10,7 +10,7 @@
  *                                                                        *
  *************************************************************************/
 class PrintVisitor;
-
+class NodeLocation;
 class Scope;
 class Declaration;
 class Declarations;
@@ -144,13 +144,29 @@ class PrintVisitor : public Visitor {
     virtual void visit(VectorVariable *vec_var);
 };
 
+class NodeLocation
+{
+  private:
+    int m_first_line = 0;
+    int m_last_line  = 0;
+    int m_first_col = 0;
+    int m_last_col = 0;
+  public:
+    NodeLocation(int first_line, int last_line, int first_col, int last_col) :
+      m_first_line(first_line), m_last_line(last_line), m_first_col(first_col), m_last_col(last_col) {}
+};
 
 class Node
 {
+  private:
+    NodeLocation *m_node_location_in_file = nullptr;
   public:
     virtual void visit(Visitor &vistor) = 0;
+    virtual ~Node() {delete m_node_location_in_file;}
 
-    virtual ~Node() {}
+  public: /* The fields below are used to track the location for different nodes */
+    NodeLocation *get_node_location () const {return m_node_location_in_file;}
+    void set_node_location (NodeLocation *node_location) {m_node_location_in_file = node_location;}
 };
 
 class Type : public Node

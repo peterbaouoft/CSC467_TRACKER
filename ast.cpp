@@ -85,6 +85,11 @@ node *ast_allocate(NodeKind type, ...)
 
         Declaration *declaration = new Declaration(type, id, expression, is_const);
 
+        YYLTYPE *rule_loc = va_arg(args, YYLTYPE *);
+        NodeLocation *rule_location = new NodeLocation(rule_loc->first_line, rule_loc->last_line,
+                                                        rule_loc->first_column, rule_loc->last_column);
+        declaration->set_node_location(rule_location);
+
         ret_node = declaration;
         break;
     }
@@ -139,6 +144,11 @@ node *ast_allocate(NodeKind type, ...)
         if_statement->statement = va_arg(args, Statement *);
         if_statement->else_statement = va_arg(args, Statement *);
 
+        YYLTYPE *rule_loc = va_arg(args, YYLTYPE *);
+        NodeLocation *rule_location = new NodeLocation(rule_loc->first_line, rule_loc->last_line,
+                                                        rule_loc->first_column, rule_loc->last_column);
+        if_statement->set_node_location(rule_location);
+
         ret_node = if_statement;
         break;
     }
@@ -148,6 +158,11 @@ node *ast_allocate(NodeKind type, ...)
         AssignStatement *assign_statement = new AssignStatement();
         assign_statement->variable = va_arg(args, IdentifierNode *);
         assign_statement->expression = va_arg(args, Expression *);
+
+        YYLTYPE *rule_loc = va_arg(args, YYLTYPE *);
+        NodeLocation *rule_location = new NodeLocation(rule_loc->first_line, rule_loc->last_line,
+                                                        rule_loc->first_column, rule_loc->last_column);
+        assign_statement->set_node_location(rule_location);
 
         ret_node = assign_statement;
         break;
@@ -172,6 +187,9 @@ node *ast_allocate(NodeKind type, ...)
         /* Here, we get the specific type for a single expression and
          * instantiate its subtype accordingly */
         ExpressionType et = static_cast<ExpressionType>(va_arg(args, int));
+        YYLTYPE *rule_loc = va_arg(args, YYLTYPE *);
+        NodeLocation *rule_location = new NodeLocation(rule_loc->first_line, rule_loc->last_line,
+                                                        rule_loc->first_column, rule_loc->last_column);
         switch (et)
         {
 
@@ -179,18 +197,23 @@ node *ast_allocate(NodeKind type, ...)
         {
             Constructor *ct = va_arg(args, Constructor *);
             ret_node = new ConstructorExpression(ct);
+            ret_node->set_node_location(rule_location);
             break;
         }
         case FUNCTION:
         {
             Function *func = va_arg(args, Function *);
             ret_node = new FunctionExpression(func);
+
+            ret_node->set_node_location(rule_location);
             break;
         }
         case VARIABLE:
         {
             IdentifierNode *id_node = va_arg(args, IdentifierNode*);
             ret_node = new VariableExpression(id_node);
+
+            ret_node->set_node_location(rule_location);
             break;
         }
 
@@ -198,18 +221,24 @@ node *ast_allocate(NodeKind type, ...)
         {
             bool bool_literal = static_cast<bool>(va_arg(args, int));
             ret_node = new BoolLiteralExpression(bool_literal);
+
+            ret_node->set_node_location(rule_location);
             break;
         }
         case INT_LITERAL:
         {
             int int_literal = va_arg(args, int);
             ret_node = new IntLiteralExpression(int_literal);
+
+            ret_node->set_node_location(rule_location);
             break;
         }
         case FLOAT_LITERAL:
         {
             float float_literal = static_cast<float>(va_arg(args, double));
             ret_node = new FloatLiteralExpression(float_literal);
+
+            ret_node->set_node_location(rule_location);
             break;
         }
         }
@@ -225,6 +254,11 @@ node *ast_allocate(NodeKind type, ...)
         /* Below is done before the semantic analysis, the type value will be filled
          * in, once semantic analysis is complete */
         ret_node = unary_expr;
+
+        YYLTYPE *rule_loc = va_arg(args, YYLTYPE *);
+        NodeLocation *rule_location = new NodeLocation(rule_loc->first_line, rule_loc->last_line,
+                                                        rule_loc->first_column, rule_loc->last_column);
+        ret_node->set_node_location(rule_location);
         break;
     }
 
@@ -238,6 +272,11 @@ node *ast_allocate(NodeKind type, ...)
         /* Below is done before the semantic analysis, the type value will be filled
          * in, once semantic analysis is complete */
         ret_node = bin_expr;
+
+        YYLTYPE *rule_loc = va_arg(args, YYLTYPE *);
+        NodeLocation *rule_location = new NodeLocation(rule_loc->first_line, rule_loc->last_line,
+                                                        rule_loc->first_column, rule_loc->last_column);
+        ret_node->set_node_location(rule_location);
         break;
     }
 
@@ -251,6 +290,11 @@ node *ast_allocate(NodeKind type, ...)
         VectorVariable *vec_var = new VectorVariable(id_node, int_literal);
 
         ret_node = vec_var;
+
+        YYLTYPE *rule_loc = va_arg(args, YYLTYPE *);
+        NodeLocation *rule_location = new NodeLocation(rule_loc->first_line, rule_loc->last_line,
+                                                        rule_loc->first_column, rule_loc->last_column);
+        ret_node->set_node_location(rule_location);
         break;
     }
 
@@ -261,6 +305,11 @@ node *ast_allocate(NodeKind type, ...)
         string function_name(func_name); /* The func name can not be null, thus directly cast */
         Arguments *arguments = va_arg(args, Arguments*);
         ret_node = new Function(function_name, arguments);
+
+        YYLTYPE *rule_loc = va_arg(args, YYLTYPE *);
+        NodeLocation *rule_location = new NodeLocation(rule_loc->first_line, rule_loc->last_line,
+                                                        rule_loc->first_column, rule_loc->last_column);
+        ret_node->set_node_location(rule_location);
         break;
     }
 
@@ -270,6 +319,11 @@ node *ast_allocate(NodeKind type, ...)
         Arguments *arguments = va_arg(args, Arguments*);
 
         ret_node = new Constructor(type, arguments);
+
+        YYLTYPE *rule_loc = va_arg(args, YYLTYPE *);
+        NodeLocation *rule_location = new NodeLocation(rule_loc->first_line, rule_loc->last_line,
+                                                        rule_loc->first_column, rule_loc->last_column);
+        ret_node->set_node_location(rule_location);
         break;
     }
 
@@ -283,6 +337,11 @@ node *ast_allocate(NodeKind type, ...)
         arguments->push_back_expression(expression);
 
         ret_node = arguments;
+
+        YYLTYPE *rule_loc = va_arg(args, YYLTYPE *);
+        NodeLocation *rule_location = new NodeLocation(rule_loc->first_line, rule_loc->last_line,
+                                                        rule_loc->first_column, rule_loc->last_column);
+        ret_node->set_node_location(rule_location);
         break;
     }
 
@@ -292,6 +351,11 @@ node *ast_allocate(NodeKind type, ...)
         IdentifierNode *id_node = new IdentifierNode(id);
 
         ret_node = id_node;
+
+        YYLTYPE *rule_loc = va_arg(args, YYLTYPE *);
+        NodeLocation *rule_location = new NodeLocation(rule_loc->first_line, rule_loc->last_line,
+                                                        rule_loc->first_column, rule_loc->last_column);
+        ret_node->set_node_location(rule_location);
         break;
     }
 
