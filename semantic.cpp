@@ -31,7 +31,7 @@ class SymbolVisitor : public Visitor
 {
     private:
         SymbolTablex m_symbol_table;
-
+        bool within_if_else_scope = false;
     public:
         virtual void visit(Scope *scope)
         {
@@ -40,6 +40,7 @@ class SymbolVisitor : public Visitor
             scope->statements->visit(*this);
             m_symbol_table.exit_scope();
         }
+
         virtual void visit(Declaration *decl)
         {
             decl->type->visit(*this);
@@ -76,6 +77,32 @@ class SymbolVisitor : public Visitor
             }
             else {
                 vec_var->set_declaration(declaration);
+            }
+        }
+
+        virtual void visit(AssignStatement *assign_stmt)
+        {
+            assign_stmt->variable->visit(*this);
+            assign_stmt->expression->visit(*this);
+
+            if (within_if_else_scope){
+                Declaration *declaration = assign_stmt->variable->get_declaration();
+                if(declaration != nullptr && declaration->get_is_write_only()) {
+                    printf ("Error: Result type classes can not be assigned within if or else scope\n");
+                }
+            }
+        }
+
+        virtual void visit(IfStatement *if_statement) {
+            /* You perform type inference by visiting other ones first */
+            if_statement->expression->visit(*this);
+            within_if_else_scope = true;
+            if_statement->statement->visit(*this);
+            within_if_else_scope = false;
+            if (if_statement->else_statement){
+                within_if_else_scope = true;
+                if_statement->else_statement->visit(*this);
+                within_if_else_scope = false;
             }
         }
 };
@@ -281,6 +308,9 @@ class PostOrderVisitor : public Visitor
             std::string rhs_type = assign_stmt->expression->get_expression_type ();
             Type *temp_type = assign_stmt->variable->get_id_type();
             std::string lhs_type =  temp_type ? temp_type->type_name : "ANY_TYPE";
+
+            if (rhs_type == "ANY_TYPE" || lhs_type == "ANY_TYPE")
+                return;
 
             if (rhs_type != lhs_type) {
                 printf("Error: Can not assign a different type expression to a variable\n"); // Put line number

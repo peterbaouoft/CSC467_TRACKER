@@ -203,6 +203,7 @@ class IdentifierNode : public Node
   public:
     virtual Type *get_id_type() const {return declaration ? declaration->type : NULL;}
     void set_declaration(Declaration *decl) {declaration = decl;}
+    virtual Declaration *get_declaration() const {return declaration;}
     virtual void set_id_type(Type *type) {}
 
   public:
