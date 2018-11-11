@@ -31,7 +31,6 @@ class SymbolVisitor : public Visitor
 {
     private:
         SymbolTablex m_symbol_table;
-        bool within_if_else_scope = false;
     public:
         virtual void visit(Scope *scope)
         {
@@ -79,38 +78,49 @@ class SymbolVisitor : public Visitor
                 vec_var->set_declaration(declaration);
             }
         }
+};
 
-        virtual void visit(AssignStatement *assign_stmt)
-        {
-            assign_stmt->variable->visit(*this);
-            assign_stmt->expression->visit(*this);
+class ExpressionVisitor : public Visitor
+{
+    private:
+        int expression_instance_type = -1;
+    public:
+        int get_expression_instance_type() const {return expression_instance_type;}
+        void set_expression_instance_type(int type) {expression_instance_type = type;}
 
-            if (within_if_else_scope){
-                Declaration *declaration = assign_stmt->variable->get_declaration();
-                if(declaration != nullptr && declaration->get_is_write_only()) {
-                    printf ("Error: Result type classes can not be assigned within if or else scope\n");
-                }
-            }
-        }
+        /* Empty visiting statements, as we only need to retrieve the current level type */
+        virtual void visit(Scope *scope) {}
+        virtual void visit(Declaration *decl) {}
+        virtual void visit (Declarations *decls) {}
+        virtual void visit(Type *type) {}
 
-        virtual void visit(IfStatement *if_statement) {
-            /* You perform type inference by visiting other ones first */
-            if_statement->expression->visit(*this);
-            within_if_else_scope = true;
-            if_statement->statement->visit(*this);
-            within_if_else_scope = false;
-            if (if_statement->else_statement){
-                within_if_else_scope = true;
-                if_statement->else_statement->visit(*this);
-                within_if_else_scope = false;
-            }
-        }
+        virtual void visit(Statement *stmt) {}
+        virtual void visit(Statements *stmts) {}
+        virtual void visit(AssignStatement *as_stmt) {}
+        virtual void visit(IfStatement *if_statement) {}
+        virtual void visit(NestedScope *ns) {}
+        virtual void visit(EmptyStatement *es) {}
+
+        virtual void visit(ConstructorExpression *ce) {set_expression_instance_type(CONSTRUCTOR_EXPRESSION);}
+        virtual void visit(FloatLiteralExpression *fle) {set_expression_instance_type(FLOAT_LITERAL);}
+        virtual void visit(BoolLiteralExpression *ble) {set_expression_instance_type(BOOL_EXPRESSION); }
+        virtual void visit(IntLiteralExpression *ile) {set_expression_instance_type(INT_LITERAL);}
+        virtual void visit(UnaryExpression *ue) {}
+        virtual void visit(BinaryExpression *be) {}
+        virtual void visit(VariableExpression *ve) { set_expression_instance_type(VARIABLE);}
+        virtual void visit(FunctionExpression *fe) { set_expression_instance_type(FUNCTION);}
+
+
+        virtual void visit(Function *f) {}
+        virtual void visit(Constructor *c) {}
+
 };
 
 class PostOrderVisitor : public Visitor
 {
     /* Add a class member to track all of the semantic errors */
-
+    private:
+        int if_else_scope_counter = 0;
     public:
         virtual void visit(VectorVariable *vv){
             if (vv->get_id_type() == nullptr)
@@ -316,6 +326,22 @@ class PostOrderVisitor : public Visitor
                 printf("Error: Can not assign a different type expression to a variable\n"); // Put line number
                 return;
             }
+
+            /* Const + Uniform + Attribute Checking */
+            Declaration *variable_declaration = assign_stmt->variable->get_declaration();
+            if (variable_declaration)
+            {
+                if (variable_declaration->get_is_const())
+                    printf("Error : const qualified variable %s can not be re-assigned\n", variable_declaration->id.c_str());
+                else if(variable_declaration->get_is_read_only())
+                    printf("Error: Can not assign to a read only variable %s\n", variable_declaration->id.c_str());
+                else if(if_else_scope_counter != 0 && variable_declaration->get_is_write_only())
+                    printf("Error: Variable %s with Result type classes can not be assigned anywhere in the scope of an if or else statement \n", variable_declaration->id.c_str());
+
+                return;
+            }
+
+            /* Result Checking on RHS side */
         }
 
         virtual void visit(IfStatement *if_statement) {
