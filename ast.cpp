@@ -32,40 +32,6 @@ std::string convert_op_to_string(int operator_type){
     return ret;
 }
 
-/*=========================================END OF INITIAL DECLARATIONS======================*/
-
-
-class NestedScope : public Statement
-{
-  public:
-    Scope *scope;
-
-    NestedScope(Scope *s) : scope(s) {}
-    virtual void visit(Visitor &visitor)
-    {
-        visitor.visit(this);
-    };
-};
-
-class EmptyStatement: public Statement
-{
-   public:
-    virtual void visit(Visitor &visitor) {
-        visitor.visit(this);
-    }
-};
-
-/*================END OF STATEMENT CLASS================*/
-
-/*================Start of Expression classes===========*/
-
-
-
-
-
-
-/*===========================End of expression classes========================*/
-
 node *ast = NULL;
 
 node *ast_allocate(NodeKind type, ...)
@@ -458,6 +424,12 @@ void ast_print(node *root)
     PrintVisitor visitor;
     root->visit(visitor);
 }
+
+void ast_free(node *ast_root)
+{
+    delete ast_root;
+}
+
 /*===============================================VISITORS=====================================*/
 void PrintVisitor::visit(Scope *scope)
 {

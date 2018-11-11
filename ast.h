@@ -1,4 +1,3 @@
-
 #ifndef AST_H_
 #define AST_H_ 1
 #include <stdlib.h>
@@ -150,6 +149,23 @@ class Node
 {
   public:
     virtual void visit(Visitor &vistor) = 0;
+
+    virtual ~Node() {}
+};
+
+class Type : public Node
+{
+  public:
+    std::string type_name;
+
+    Type(const std::string &type)
+    {
+        this->type_name = type;
+    }
+    virtual void visit(Visitor &visitor)
+    {
+        visitor.visit(this);
+    }
 };
 
 class Expression : public Node
@@ -159,6 +175,9 @@ class Expression : public Node
   public:
     virtual std::string get_expression_type() const {return type;}
     virtual void set_expression_type(std::string type_str) {type = type_str;}
+
+  public:
+    virtual ~Expression() {}
 };
 
 class Declaration : public Node
@@ -193,8 +212,77 @@ class Declaration : public Node
     bool get_is_write_only() const {return is_write_only;}
     void set_is_write_only(const bool &write_only_val) { is_write_only = write_only_val;}
 
+  public: /* Place to put destructor function calls */
+    ~Declaration() {
+        delete type;
+        delete initial_val;
+    }
 };
 
+class Declarations : public Node
+{
+  public:
+    std::vector<Declaration *> declaration_list;
+
+  public:
+    virtual void push_back_declaration(Declaration *decl) { declaration_list.push_back(decl); }
+    virtual void push_front_declaration(Declaration *decl) { declaration_list.insert(declaration_list.begin(), decl);}
+    virtual void visit(Visitor &visitor)
+    {
+        visitor.visit(this);
+    }
+  public:
+    ~Declarations() {
+        for (Declaration *decl : declaration_list)
+            delete decl; /* We don't have nullptr in the list, so safe to loop all of them :) */
+    }
+};
+
+class Statement : public Node
+{
+  public:
+    virtual void visit(Visitor &visitor) = 0;
+
+  public:
+    virtual ~Statement() {}
+};
+
+class Statements : public Node
+{
+  private:
+    std::vector<Statement *> statement_list;
+  public:
+
+    const std::vector<Statement *> &get_statement_list() const {return statement_list;}
+    virtual void push_back_statement(Statement *stmt) { statement_list.push_back(stmt); }
+    virtual void visit(Visitor &visitor)
+    {
+        visitor.visit(this);
+    };
+  public:
+    ~Statements() {
+        for (Statement *statement : statement_list)
+            delete statement;
+    }
+};
+
+class Scope : public Node
+{
+  public:
+    Declarations *declarations = nullptr;
+    Statements *statements = nullptr;
+    virtual void visit(Visitor &visitor)
+    {
+        visitor.visit(this);
+    }
+  public:
+    ~Scope() {
+        delete declarations;
+        delete statements;
+    }
+};
+
+/**********************************************Identifier Classes*********************************************************/
 class IdentifierNode : public Node
 {
   private:
@@ -214,6 +302,9 @@ class IdentifierNode : public Node
     {
         visitor.visit(this);
     };
+  public:
+    virtual ~IdentifierNode () {} /* We don't delete declaration, because they are handled in the earlier stages, but have to say.. this might
+                                   be a design flaw. It is a virtual destructor due to inheritance */
 };
 
 class VectorVariable : public IdentifierNode
@@ -237,69 +328,12 @@ class VectorVariable : public IdentifierNode
     void set_id_type(Type *t) {
         type = t;
     }
-};
-
-
-class Scope : public Node
-{
   public:
-    Declarations *declarations = nullptr;
-    Statements *statements = nullptr;
-    virtual void visit(Visitor &visitor)
-    {
-        visitor.visit(this);
-    }
+    ~VectorVariable() { if (type != nullptr) delete type;}
 };
+/**********************************************END Identifier Classes*********************************************************/
 
-class Declarations : public Node
-{
-  public:
-    std::vector<Declaration *> declaration_list;
-
-  public:
-    virtual void push_back_declaration(Declaration *decl) { declaration_list.push_back(decl); }
-    virtual void push_front_declaration(Declaration *decl) { declaration_list.insert(declaration_list.begin(), decl);}
-    virtual void visit(Visitor &visitor)
-    {
-        visitor.visit(this);
-    }
-};
-
-class Statements : public Node
-{
-  private:
-    std::vector<Statement *> statement_list;
-  public:
-
-    const std::vector<Statement *> &get_statement_list() const {return statement_list;}
-    virtual void push_back_statement(Statement *stmt) { statement_list.push_back(stmt); }
-    virtual void visit(Visitor &visitor)
-    {
-        visitor.visit(this);
-    };
-};
-
-class Type : public Node
-{
-  public:
-    std::string type_name;
-
-    Type(const std::string &type)
-    {
-        this->type_name = type;
-    }
-    virtual void visit(Visitor &visitor)
-    {
-        visitor.visit(this);
-    }
-};
 /*=========================Beginning of STATEMENT class===================================*/
-class Statement : public Node
-{
-  public:
-    virtual void visit(Visitor &visitor) = 0;
-};
-
 class AssignStatement : public Statement
 {
   public:
@@ -309,6 +343,11 @@ class AssignStatement : public Statement
     {
         visitor.visit(this);
     };
+   public:
+    ~AssignStatement() {
+        delete variable;
+        delete expression;
+    }
 };
 
 class IfStatement : public Statement
@@ -322,10 +361,41 @@ class IfStatement : public Statement
     {
         visitor.visit(this);
     };
+  public:
+    ~IfStatement() {
+        delete expression;
+        delete statement;
+        if (else_statement) delete else_statement;
+    }
 };
 
+class NestedScope : public Statement
+{
+  public:
+    Scope *scope;
 
-/*****************************************Expression Definitions**********************/
+    NestedScope(Scope *s) : scope(s) {}
+    virtual void visit(Visitor &visitor)
+    {
+        visitor.visit(this);
+    };
+  public:
+    ~NestedScope() {delete scope;}
+};
+
+class EmptyStatement: public Statement
+{
+  public:
+    virtual void visit(Visitor &visitor) {
+        visitor.visit(this);
+    }
+  public:
+    ~EmptyStatement() {}
+};
+
+/*================END OF STATEMENT CLASS================*/
+
+/*****************************************Consturctors and Functions Definitions**********************/
 class Arguments : public Node
 {
   private:
@@ -340,20 +410,14 @@ class Arguments : public Node
     };
 
     virtual void push_back_expression(Expression *expression) {m_expression_list.push_back(expression);}
-};
 
-class Function : public Node
-{
   public:
-    std::string function_name;
-    Arguments *arguments;
-
-    Function(std::string func_name, Arguments *args) : function_name(func_name), arguments(args) {}
-    virtual void visit(Visitor &visitor)
-    {
-        visitor.visit(this);
-    };
+    ~Arguments() {
+        for (Expression *expression : m_expression_list)
+            delete expression;
+    }
 };
+
 class Constructor : public Node
 {
   public:
@@ -365,6 +429,11 @@ class Constructor : public Node
     {
         visitor.visit(this);
     };
+  public:
+    ~Constructor() {
+        delete type;
+        delete args;
+    }
 };
 
 class ConstructorExpression : public Expression
@@ -377,6 +446,23 @@ class ConstructorExpression : public Expression
     {
         visitor.visit(this);
     };
+  public:
+    ~ConstructorExpression() {delete constructor;}
+};
+
+class Function : public Node
+{
+  public:
+    std::string function_name;
+    Arguments *arguments;
+    Function(std::string func_name, Arguments *args) : function_name(func_name), arguments(args) {}
+
+    virtual void visit(Visitor &visitor)
+    {
+        visitor.visit(this);
+    };
+  public:
+    ~Function() {delete arguments;}
 };
 
 class FunctionExpression : public Expression
@@ -389,7 +475,10 @@ class FunctionExpression : public Expression
     {
         visitor.visit(this);
     };
+  public:
+    ~FunctionExpression() {delete function; }
 };
+/*****************************************END Consturctors and Functions Definitions**********************/
 
 class VariableExpression : public Expression
 {
@@ -401,6 +490,9 @@ class VariableExpression : public Expression
     {
         visitor.visit(this);
     };
+
+  public:
+    ~VariableExpression() {delete id_node;}
 };
 
 class IntLiteralExpression : public Expression
@@ -452,6 +544,9 @@ class UnaryExpression : public Expression
     {
         visitor.visit(this);
     };
+
+  public:
+    ~UnaryExpression() {delete right_expression;}
 };
 
 class BinaryExpression : public UnaryExpression
@@ -467,10 +562,11 @@ class BinaryExpression : public UnaryExpression
     {
         visitor.visit(this);
     };
+  public:
+    ~BinaryExpression() {delete left_expression;}
 };
 
 node *ast_allocate(NodeKind type, ...);
 void ast_print(node *ast_root);
-int semantic_check(node * ast);
-
+void ast_free(node *ast_root);
 #endif /* AST_H_ */

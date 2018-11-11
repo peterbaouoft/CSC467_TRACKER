@@ -24,6 +24,7 @@
 
 /* Phases 3,4: Uncomment following includes as needed */
 #include "ast.h"
+#include "semantic.h"
 //#include "codegen.h"
 
 /***********************************************************************
@@ -103,7 +104,7 @@ int main (int argc, char *argv[]) {
  **********************************************************************/
 
 /* Make calls to any cleanup or finalization routines here. */
-  // ast_free(ast);
+  ast_free(ast);
 
   /* Clean up files if necessary */
   if (inputFile != DEFAULT_INPUT_FILE)

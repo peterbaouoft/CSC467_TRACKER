@@ -1,5 +1,6 @@
 #include <string.h>
 #include <iostream>
+#include "semantic.h"
 #include "symbol.h"
 #include "ast.h"
 #include "common.h"
@@ -128,6 +129,7 @@ class PostOrderVisitor : public Visitor
         virtual void visit(Declaration *decl){
             if (decl->initial_val == nullptr) /* We don't need to check for no initalized declarations */
                 return;
+
             /* First do a type inference */
             decl->initial_val->visit(*this);
 
@@ -309,10 +311,10 @@ class PostOrderVisitor : public Visitor
             // printf("LHS type is %s\n", lhs_expr_type.c_str());
             // printf("RHS type is %s\n", rhs_expr_type.c_str());
 
-
             /* goes back to the caller, with any type as default */
             if (lhs_expr_type == "ANY_TYPE" || rhs_expr_type == "ANY_TYPE")
                 return;
+
             std::string lhs_base_type = get_base_type(lhs_expr_type);
             std::string rhs_base_type = get_base_type(rhs_expr_type);
             if (lhs_base_type != rhs_base_type){
@@ -333,6 +335,7 @@ class PostOrderVisitor : public Visitor
 
             /* ret_type to capture result */
             std::string ret_type = "ANY_TYPE";
+
             if (operator_type == AND || operator_type == OR){ /* Early returns */
                 if (is_arithmetic)  {
                     printf("Logical operators only work for boolean types\n");
