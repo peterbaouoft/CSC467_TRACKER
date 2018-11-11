@@ -3,7 +3,9 @@
     vec4 c;
     if (a)
     {
-        gl_FragColor = c;
+        if (true);
+	gl_FragColor = c;
+    	
     }
     else
         gl_FragDepth = a;

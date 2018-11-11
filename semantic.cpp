@@ -108,8 +108,8 @@ class ExpressionVisitor : public Visitor
         virtual void visit(IntLiteralExpression *ile) {set_expression_instance_type(INT_LITERAL);}
         virtual void visit(UnaryExpression *ue) {}
         virtual void visit(BinaryExpression *be) {}
-        virtual void visit(VariableExpression *ve) { set_expression_instance_type(VARIABLE);}
-        virtual void visit(FunctionExpression *fe) { set_expression_instance_type(FUNCTION);}
+        virtual void visit(VariableExpression *ve) {set_expression_instance_type(VARIABLE);}
+        virtual void visit(FunctionExpression *fe) {set_expression_instance_type(FUNCTION);}
 
 
         virtual void visit(Function *f) {}
@@ -122,7 +122,48 @@ class PostOrderVisitor : public Visitor
     /* Add a class member to track all of the semantic errors */
     private:
         int if_else_scope_counter = 0;
+        ExpressionVisitor expression_visitor;
     public:
+
+        virtual void visit(Declaration *decl){
+            if (decl->initial_val == nullptr) /* We don't need to check for no initalized declarations */
+                return;
+            /* First do a type inference */
+            decl->initial_val->visit(*this);
+
+            /* Then we want to get its correspondent expression type */
+            decl->initial_val->visit(expression_visitor);
+
+            /* We achieve that by using a visitor which only stops at the immediate next level */
+            int expression_instance_type = expression_visitor.get_expression_instance_type();
+            if (decl->get_is_const()) {
+                bool is_valid = false;
+                /* Literal initialization */
+                if (expression_instance_type == FLOAT_LITERAL || expression_instance_type == BOOL_EXPRESSION ||
+                    expression_instance_type == INT_LITERAL)
+                    is_valid = true;
+
+                /* Uniform variable */
+                else if (expression_instance_type == VARIABLE)
+                {
+                    VariableExpression *ve = reinterpret_cast<VariableExpression*>(decl->initial_val); /* It is safe since we already know the expression type */
+                    Declaration *variable_decl = ve->id_node->get_declaration();
+                    if (variable_decl->get_is_read_only() && variable_decl->get_is_const())
+                        is_valid = true;
+                    else
+                        is_valid = false;
+                }
+
+                if(!is_valid)
+                    printf("Error: const qualified variable %s must be initalized with a literal value or"
+                            " a uniform variable, not an expression\n", decl->id.c_str());
+                // printf("The expression type is %d\n", expression_instance_type);
+                // printf("The tested variable type is %d\n", VARIABLE);
+                // printf("WOCAO\n, %s", decl->get_is_read_only() ? "true" : "false");
+            }
+
+        }
+
         virtual void visit(VectorVariable *vv){
             if (vv->get_id_type() == nullptr)
                 return; /* We already reported errors on symbol table creation */
@@ -135,6 +176,7 @@ class PostOrderVisitor : public Visitor
             std::string base_type = get_base_type(type_name);
             vv->set_id_type(new Type(base_type)); /* Set the vector variable's type into base type */
         }
+
         virtual void visit(ConstructorExpression *ce){
             ce->constructor->visit(*this);
             std::string type = ce->constructor->type->type_name;
@@ -212,8 +254,8 @@ class PostOrderVisitor : public Visitor
             std::string lhs_expr_type = be->left_expression->get_expression_type();
             std::string rhs_expr_type = be->right_expression->get_expression_type();
 
-            printf("LHS type is %s\n", lhs_expr_type.c_str());
-            printf("RHS type is %s\n", rhs_expr_type.c_str());
+            // printf("LHS type is %s\n", lhs_expr_type.c_str());
+            // printf("RHS type is %s\n", rhs_expr_type.c_str());
 
 
             /* goes back to the caller, with any type as default */
@@ -323,6 +365,13 @@ class PostOrderVisitor : public Visitor
         virtual void visit(VariableExpression *ve){
             ve->id_node->visit(*this);
 
+            Declaration *declaration = ve->id_node->get_declaration();
+
+            if (declaration && declaration->get_is_write_only()) {
+                printf("Error: Variable %s has Result type class and is write only\n", declaration->id.c_str());
+                return;
+            }
+
             Type *variable_type = ve->id_node->get_id_type(); /* Note: due to the nature of parser, id_node exists by default */
             if (variable_type != nullptr){
                 // std::string base_type = get_base_type(ve->id_node->get_id_type()->type_name);
@@ -342,6 +391,8 @@ class PostOrderVisitor : public Visitor
             Type *temp_type = assign_stmt->variable->get_id_type();
             std::string lhs_type =  temp_type ? temp_type->type_name : "ANY_TYPE";
 
+            // printf("LHS type is %s\n\n", lhs_type.c_str());
+            // printf("RHS type is %s\n\n", rhs_type.c_str());
             if (rhs_type == "ANY_TYPE" || lhs_type == "ANY_TYPE")
                 return;
 
@@ -352,27 +403,30 @@ class PostOrderVisitor : public Visitor
 
             /* Const + Uniform + Attribute Checking */
             Declaration *variable_declaration = assign_stmt->variable->get_declaration();
-            if (variable_declaration)
             {
-                if (variable_declaration->get_is_const())
-                    printf("Error : const qualified variable %s can not be re-assigned\n", variable_declaration->id.c_str());
-                else if(variable_declaration->get_is_read_only())
-                    printf("Error: Can not assign to a read only variable %s\n", variable_declaration->id.c_str());
-                else if(if_else_scope_counter != 0 && variable_declaration->get_is_write_only())
-                    printf("Error: Variable %s with Result type classes can not be assigned anywhere in the scope of an if or else statement \n", variable_declaration->id.c_str());
+                if (variable_declaration) {
+                    if (variable_declaration->get_is_const())
+                        printf("Error : const qualified variable %s can not be re-assigned\n", variable_declaration->id.c_str());
+                    else if(variable_declaration->get_is_read_only())
+                        printf("Error: Can not assign to a read only variable %s\n", variable_declaration->id.c_str());
+                    else if(if_else_scope_counter != 0 && variable_declaration->get_is_write_only())
+                        printf("Error: Variable %s with Result type classes can not be assigned anywhere in the scope of an if or else statement \n", variable_declaration->id.c_str());
 
-                return;
+                    return;
+                }
             }
-
-            /* Result Checking on RHS side */
         }
 
         virtual void visit(IfStatement *if_statement) {
             /* You perform type inference by visiting other ones first */
             if_statement->expression->visit(*this);
+            if_else_scope_counter++;
             if_statement->statement->visit(*this);
+            if_else_scope_counter--;
             if (if_statement->else_statement){
+                if_else_scope_counter++;
                 if_statement->else_statement->visit(*this);
+                if_else_scope_counter--;
             }
             if (if_statement->expression->get_expression_type() != "bool")
               printf("Error: Condition has to be a type of boolean\n"); // Put line numbers in
@@ -405,16 +459,16 @@ class PredefinedVariableVisitor : public Visitor
             /* Result predefined variables */
             Declaration *gl_FragColor = new Declaration(new Type("vec4"), "gl_FragColor", nullptr, false);
             Declaration *gl_FragDepth = new Declaration(new Type("bool"), "gl_FragDepth", nullptr, false);
-            Declaration *gl_FragCoord = new Declaration(new Type("vec4"), "gl_FragCoord", nullptr, false);
             gl_FragColor->set_is_write_only(true); /* Result type classes are all write only */
             gl_FragDepth->set_is_write_only(true);
-            gl_FragCoord->set_is_write_only(true);
 
             /* Attribute Predefined variables */
+            Declaration *gl_FragCoord = new Declaration(new Type("vec4"), "gl_FragCoord", nullptr, false);
             Declaration *gl_TexCoord = new Declaration(new Type("vec4"), "gl_TexCoord", nullptr, false);
             Declaration *gl_Color = new Declaration(new Type("vec4"), "gl_Color", nullptr, false);
             Declaration *gl_Secondary = new Declaration(new Type("vec4"), "gl_Secondary", nullptr, false);
             Declaration *gl_FogFradCoord = new Declaration(new Type("vec4"), "gl_FogFradCoord", nullptr, false);
+            gl_FragCoord->set_is_read_only(true);
             gl_TexCoord->set_is_read_only(true);
             gl_Color->set_is_read_only(true);
             gl_Secondary->set_is_read_only(true);
