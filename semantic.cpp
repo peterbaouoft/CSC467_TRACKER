@@ -149,11 +149,13 @@ class PostOrderVisitor : public Visitor
             for (int i=0; i< (int)expression_list.size(); i++){
                 std::string arg_type = expression_list[i]->get_expression_type();
                 if (arg_type != base_type){
-                    printf ("Error line %d: argument type (%s) and constructor type (%s) mismatch\n",
-                            yyline, arg_type.c_str(), base_type.c_str());
+                    printf ("Error: argument type (%s) and constructor type (%s) mismatch\n",
+                            arg_type.c_str(), base_type.c_str());
                 }
             }
         }
+        virtual void visit(Function *f){
+                    }
         virtual void visit(FloatLiteralExpression *fle){
             fle->set_expression_type("float");
         }
