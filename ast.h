@@ -163,11 +163,14 @@ class Expression : public Node
 
 class Declaration : public Node
 {
+  private:
+    bool is_const = false;
+    bool is_read_only = false;
+    bool is_write_only = false;
   public:
     Type *type = nullptr;
     std::string id;
     Expression *initial_val = nullptr;
-    bool is_const = false;
 
   public:
     Declaration(Type *type, const std::string &id, Expression *init_val, bool is_const)
@@ -182,6 +185,14 @@ class Declaration : public Node
     {
         visitor.visit(this);
     }
+
+    bool get_is_const() const {return is_const;}
+    void set_is_const(const bool &const_val) { is_const = const_val;}
+    bool get_is_read_only() const {return is_read_only;}
+    void set_is_read_only(const bool &read_only_val) { is_read_only = read_only_val;}
+    bool get_is_write_only() const {return is_write_only;}
+    void set_is_write_only(const bool &write_only_val) { is_write_only = write_only_val;}
+
 };
 
 class IdentifierNode : public Node
@@ -190,8 +201,10 @@ class IdentifierNode : public Node
     Declaration *declaration = nullptr;
 
   public:
-    Type *get_id_type() const {return declaration ? declaration->type : NULL;}
+    virtual Type *get_id_type() const {return declaration ? declaration->type : NULL;}
     void set_declaration(Declaration *decl) {declaration = decl;}
+    virtual Declaration *get_declaration() const {return declaration;}
+    virtual void set_id_type(Type *type) {}
 
   public:
     std::string id;
@@ -205,6 +218,8 @@ class IdentifierNode : public Node
 
 class VectorVariable : public IdentifierNode
 {
+  private:
+    Type *type = nullptr;
   public:
     int vector_index;
 
@@ -214,6 +229,14 @@ class VectorVariable : public IdentifierNode
     {
         visitor.visit(this);
     };
+
+    Type *get_id_type() const{
+        return type ?: IdentifierNode::get_id_type();
+    }
+
+    void set_id_type(Type *t) {
+        type = t;
+    }
 };
 
 
@@ -235,6 +258,7 @@ class Declarations : public Node
 
   public:
     virtual void push_back_declaration(Declaration *decl) { declaration_list.push_back(decl); }
+    virtual void push_front_declaration(Declaration *decl) { declaration_list.insert(declaration_list.begin(), decl);}
     virtual void visit(Visitor &visitor)
     {
         visitor.visit(this);

@@ -32,7 +32,6 @@ class SymbolVisitor : public Visitor
 {
     private:
         SymbolTablex m_symbol_table;
-
     public:
         virtual void visit(Scope *scope)
         {
@@ -41,6 +40,7 @@ class SymbolVisitor : public Visitor
             scope->statements->visit(*this);
             m_symbol_table.exit_scope();
         }
+
         virtual void visit(Declaration *decl)
         {
             decl->type->visit(*this);
@@ -81,10 +81,47 @@ class SymbolVisitor : public Visitor
         }
 };
 
+class ExpressionVisitor : public Visitor
+{
+    private:
+        int expression_instance_type = -1;
+    public:
+        int get_expression_instance_type() const {return expression_instance_type;}
+        void set_expression_instance_type(int type) {expression_instance_type = type;}
+
+        /* Empty visiting statements, as we only need to retrieve the current level type */
+        virtual void visit(Scope *scope) {}
+        virtual void visit(Declaration *decl) {}
+        virtual void visit (Declarations *decls) {}
+        virtual void visit(Type *type) {}
+
+        virtual void visit(Statement *stmt) {}
+        virtual void visit(Statements *stmts) {}
+        virtual void visit(AssignStatement *as_stmt) {}
+        virtual void visit(IfStatement *if_statement) {}
+        virtual void visit(NestedScope *ns) {}
+        virtual void visit(EmptyStatement *es) {}
+
+        virtual void visit(ConstructorExpression *ce) {set_expression_instance_type(CONSTRUCTOR_EXPRESSION);}
+        virtual void visit(FloatLiteralExpression *fle) {set_expression_instance_type(FLOAT_LITERAL);}
+        virtual void visit(BoolLiteralExpression *ble) {set_expression_instance_type(BOOL_EXPRESSION); }
+        virtual void visit(IntLiteralExpression *ile) {set_expression_instance_type(INT_LITERAL);}
+        virtual void visit(UnaryExpression *ue) {}
+        virtual void visit(BinaryExpression *be) {}
+        virtual void visit(VariableExpression *ve) { set_expression_instance_type(VARIABLE);}
+        virtual void visit(FunctionExpression *fe) { set_expression_instance_type(FUNCTION);}
+
+
+        virtual void visit(Function *f) {}
+        virtual void visit(Constructor *c) {}
+
+};
+
 class PostOrderVisitor : public Visitor
 {
     /* Add a class member to track all of the semantic errors */
-
+    private:
+        int if_else_scope_counter = 0;
     public:
         virtual void visit(VectorVariable *vv){
             if (vv->get_id_type() == nullptr)
@@ -95,6 +132,8 @@ class PostOrderVisitor : public Visitor
             if (vv->vector_index > vec_dimension || vv->vector_index < 0)
                 printf("Error: vector index out of bounds (vector: %s, index: %d, bound: 0-%d)",
                         vv->id.c_str(), vv->vector_index, vec_dimension); /* TODO: add line number */
+            std::string base_type = get_base_type(type_name);
+            vv->set_id_type(new Type(base_type)); /* Set the vector variable's type into base type */
         }
         virtual void visit(ConstructorExpression *ce){
             std::string type = ce->constructor->type->type_name;
@@ -257,7 +296,7 @@ class PostOrderVisitor : public Visitor
                 ret_type = "bool";
             }
 
-            else if (operator_type == DOUBLE_EQ || operator_type == N_EQ) \
+            else if (operator_type == DOUBLE_EQ || operator_type == N_EQ)
             {
                 if (!matching_dimen) {
                     printf("The expression dimension mismatches, one is %d, and the other is %d", lhs_vec_dimen, rhs_vec_dimen);
@@ -296,10 +335,29 @@ class PostOrderVisitor : public Visitor
             Type *temp_type = assign_stmt->variable->get_id_type();
             std::string lhs_type =  temp_type ? temp_type->type_name : "ANY_TYPE";
 
+            if (rhs_type == "ANY_TYPE" || lhs_type == "ANY_TYPE")
+                return;
+
             if (rhs_type != lhs_type) {
                 printf("Error: Can not assign a different type expression to a variable\n"); // Put line number
                 return;
             }
+
+            /* Const + Uniform + Attribute Checking */
+            Declaration *variable_declaration = assign_stmt->variable->get_declaration();
+            if (variable_declaration)
+            {
+                if (variable_declaration->get_is_const())
+                    printf("Error : const qualified variable %s can not be re-assigned\n", variable_declaration->id.c_str());
+                else if(variable_declaration->get_is_read_only())
+                    printf("Error: Can not assign to a read only variable %s\n", variable_declaration->id.c_str());
+                else if(if_else_scope_counter != 0 && variable_declaration->get_is_write_only())
+                    printf("Error: Variable %s with Result type classes can not be assigned anywhere in the scope of an if or else statement \n", variable_declaration->id.c_str());
+
+                return;
+            }
+
+            /* Result Checking on RHS side */
         }
 
         virtual void visit(IfStatement *if_statement) {
@@ -314,17 +372,94 @@ class PostOrderVisitor : public Visitor
         }
 };
 
+class PredefinedVariableVisitor : public Visitor
+{
+    public:
+        virtual void visit(Scope *scope){
+            scope->declarations->visit(*this); /* We only need to visit declarations to push content in */
+        }
+        virtual void visit(Declarations *decls)
+        {
+            /* We have the following predefined variables
+            result vec4 gl_FragColor ;
+            result bool gl_FragDepth ;
+            result vec4 gl_FragCoord ;
+            attribute vec4 gl_TexCoord;
+            attribute vec4 gl_Color;
+            attribute vec4 gl_Secondary;
+            attribute vec4 gl_FogFragCoord;
+            uniform vec4 gl_Light_Half ;
+            uniform vec4 gl_Light_Ambient ;
+            uniform vec4 gl_Material_Shininess ;
+            uniform vec4 env1;
+            uniform vec4 env2;
+            uniform vec4 env3;*/
+
+            /* Result predefined variables */
+            Declaration *gl_FragColor = new Declaration(new Type("vec4"), "gl_FragColor", nullptr, false);
+            Declaration *gl_FragDepth = new Declaration(new Type("bool"), "gl_FragDepth", nullptr, false);
+            Declaration *gl_FragCoord = new Declaration(new Type("vec4"), "gl_FragCoord", nullptr, false);
+            gl_FragColor->set_is_write_only(true); /* Result type classes are all write only */
+            gl_FragDepth->set_is_write_only(true);
+            gl_FragCoord->set_is_write_only(true);
+
+            /* Attribute Predefined variables */
+            Declaration *gl_TexCoord = new Declaration(new Type("vec4"), "gl_TexCoord", nullptr, false);
+            Declaration *gl_Color = new Declaration(new Type("vec4"), "gl_Color", nullptr, false);
+            Declaration *gl_Secondary = new Declaration(new Type("vec4"), "gl_Secondary", nullptr, false);
+            Declaration *gl_FogFradCoord = new Declaration(new Type("vec4"), "gl_FogFradCoord", nullptr, false);
+            gl_TexCoord->set_is_read_only(true);
+            gl_Color->set_is_read_only(true);
+            gl_Secondary->set_is_read_only(true);
+            gl_FogFradCoord->set_is_read_only(true);
+
+
+            /* Uniform Predefined variables */
+            Declaration *gl_Light_Half = new Declaration(new Type("vec4"), "gl_Light_Half", nullptr, true);
+            Declaration *gl_Light_Ambient = new Declaration(new Type("vec4"), "gl_Light_Ambient", nullptr, true);
+            Declaration *gl_Material_Shininess = new Declaration(new Type("vec4"), "gl_Material_Shininess", nullptr, true);
+            Declaration *env1 = new Declaration(new Type("vec4"), "env1", nullptr, true);
+            Declaration *env2 = new Declaration(new Type("vec4"), "env2", nullptr, true);
+            Declaration *env3 = new Declaration(new Type("vec4"), "env3", nullptr, true);
+            gl_Light_Half->set_is_read_only(true);
+            gl_Light_Ambient->set_is_read_only(true);
+            gl_Material_Shininess->set_is_read_only(true);
+            env1->set_is_read_only(true);
+            env2->set_is_read_only(true);
+            env3->set_is_read_only(true);
+
+            /* We now push all of them into our ast node, in this case, it is the declarations */
+            decls->push_front_declaration(gl_FragColor);
+            decls->push_front_declaration(gl_FragDepth);
+            decls->push_front_declaration(gl_FragCoord);
+            decls->push_front_declaration(gl_TexCoord);
+            decls->push_front_declaration(gl_Color);
+            decls->push_front_declaration(gl_Secondary);
+            decls->push_front_declaration(gl_FogFradCoord);
+            decls->push_front_declaration(gl_Light_Half);
+            decls->push_front_declaration(gl_Light_Ambient);
+            decls->push_front_declaration(gl_Material_Shininess);
+            decls->push_front_declaration(env1);
+            decls->push_front_declaration(env2);
+            decls->push_front_declaration(env3);
+        }
+};
+
 
 int semantic_check(node * ast)
 {
-    /* This creates predefined variables, and load the source file into the scope */
 
-    /* This performs construction of symbol table, and scope checking */
+    PredefinedVariableVisitor predefined_visitor;
     SymbolVisitor symbol_visitor;
     PostOrderVisitor postorder_visitor;
 
-    /* This performs type inference and Type checking */
+    /* This creates predefined variables, and load the source file into the scope */
+    ast->visit(predefined_visitor);
+
+    /* This performs construction of symbol table, and scope checking */
     ast->visit(symbol_visitor);
+
+    /* This performs type inference and Type checking */
     ast->visit(postorder_visitor);
 
     /* This section prints out the errors collected overall, including line numbers */
