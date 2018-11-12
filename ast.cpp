@@ -542,8 +542,9 @@ void PrintVisitor::visit(Statement *stmt) {
 
 void PrintVisitor::visit(AssignStatement *assign_stmt)
 {
-    printf("\t\t(ASSIGN");
+    printf("\t\t(ASSIGN ");
     assign_stmt->variable->visit(*this);
+    printf(" ");
     assign_stmt->expression->visit(*this);
     printf(")\n");
 }
@@ -648,15 +649,7 @@ void PrintVisitor::visit(Arguments *args)
 
 void PrintVisitor::visit(IdentifierNode *ident)
 {
-    printf(" ");
-    printf("%s ", ident->id.c_str());
-    #ifdef DEBUG_PRINT_TREE
-        Type *type = ident->get_id_type();
-        if (type)
-            printf("%s", type->type_name.c_str());
-        else
-            printf("ANY_TYPE");
-    #endif
+    printf("%s", ident->id.c_str());
 }
 
 void PrintVisitor::visit(VectorVariable *vec_var)

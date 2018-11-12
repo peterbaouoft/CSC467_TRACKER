@@ -200,6 +200,13 @@ class PostOrderVisitor : public Visitor
 
     public:
         PostOrderVisitor(ErrorHandler *err_handler) : error_handler(err_handler) {}
+        void push_message_into_handler(const std::string &message, NodeLocation *node_location) {
+            assert(node_location);
+            buffer << message;
+            buffer << *node_location;
+            error_handler->push_back_error_message(new ErrorMessage(buffer.str(), node_location));
+            buffer.str("");
+        }
 
     public:
 
@@ -233,13 +240,12 @@ class PostOrderVisitor : public Visitor
                         is_valid = false;
                 }
 
+                /* Push error messages into handler */
                 if(!is_valid) {
                     assert(decl->get_node_location());
-                    buffer << "const qualified variable " << decl->id << " must be initalized with a literal value or"
-                              " a uniform variable, not an expression";
-                    buffer << " " << *decl->get_node_location();
-                    error_handler->push_back_error_message(new ErrorMessage(buffer.str(), decl->get_node_location()));
-                    buffer.str("");
+                    std::string message = "const qualified variable " + decl->id + " must be initalized with a literal value or"
+                                          " a uniform variable, not an expression ";
+                    push_message_into_handler(message, decl->get_node_location());
                 }
             }
         }
@@ -252,8 +258,11 @@ class PostOrderVisitor : public Visitor
             int vec_dimension = get_type_dimension(type_name) - 1; /* array index is always one less than dimension */
 
             if (vv->vector_index > vec_dimension || vv->vector_index < 0) {
+                /* Asserted here, since location must be set */
                 assert(vv->get_node_location());
                 assert(vv->get_declaration()->get_node_location());
+
+                /* Push error messages into handler */
                 buffer << "vector index out of bounds (vector: " << vv->id << ", index: " << vv->vector_index << ", bound: 0-" << vec_dimension << ")";
                 buffer << " " << *vv->get_node_location();
                 buffer << "\n\t " << "The declaration of the vector " << vv->id << " is " << *vv->get_declaration()->get_node_location();
@@ -278,12 +287,10 @@ class PostOrderVisitor : public Visitor
 
             // check dimension
             if (type_dimension != num_of_expressions){
-                assert(ce->get_node_location());
-                buffer << "Error: number of arguments (" << num_of_expressions << ")"
-                            " doesn't match type dimension (" << type_dimension << ")";
-                buffer << " " << *ce->get_node_location();
-                error_handler->push_back_error_message(new ErrorMessage(buffer.str(), ce->get_node_location()));
-                buffer.str("");
+                /* Push error messages into handler */
+                std::string message = "Error: number of arguments (" + std::to_string(num_of_expressions) + ")"
+                                      " doesn't match type dimension (" + std::to_string(type_dimension) + ") ";
+                push_message_into_handler(message, ce->get_node_location());
                 return; /* We might want to have early returns, as, we don't want to report too many errors ?\n */
             }
             // check type
@@ -298,11 +305,10 @@ class PostOrderVisitor : public Visitor
                 }
             }
 
+            /* Push error messages into handler */
             if (buffer.str() != "") {
-                assert(ce->get_node_location());
-                buffer << "The Constructor Expression is " << *ce->get_node_location();
-                error_handler->push_back_error_message(new ErrorMessage(buffer.str(), ce->get_node_location()));
-                buffer.str("");
+                std::string message = "The Constructor Expression is ";
+                push_message_into_handler(message, ce->get_node_location());
                 return;
             }
 
@@ -336,7 +342,7 @@ class PostOrderVisitor : public Visitor
                 }
                 std::string type_1 = args[0]->get_expression_type();
                 std::string type_2 = args[1]->get_expression_type();
-                if ((type_1 != "vec3" && type_2 != "vec3") || 
+                if ((type_1 != "vec3" && type_2 != "vec3") ||
                     (type_1 != "vec4" && type_2 != "vec4") ||
                     (type_1 != "ivec3" && type_2 != "ivec3") ||
                     (type_1 != "ivec4" && type_2 != "ivec4"))
@@ -529,7 +535,9 @@ class PostOrderVisitor : public Visitor
             Declaration *declaration = ve->id_node->get_declaration();
 
             if (declaration && declaration->get_is_write_only()) {
-                printf("Error: Variable %s has Result type class and is write only\n", declaration->id.c_str());
+                std::string message = "Variable " + declaration->id + " has Result type class and is write only ";
+                /* Push error messages into handler */
+                push_message_into_handler(message, ve->get_node_location());
                 return;
             }
 
@@ -548,8 +556,6 @@ class PostOrderVisitor : public Visitor
             Type *temp_type = assign_stmt->variable->get_id_type();
             std::string lhs_type =  temp_type ? temp_type->type_name : "ANY_TYPE";
 
-            // printf("LHS type is %s\n\n", lhs_type.c_str());
-            // printf("RHS type is %s\n\n", rhs_type.c_str());
             if (rhs_type == "ANY_TYPE" || lhs_type == "ANY_TYPE")
                 return;
 
@@ -586,7 +592,11 @@ class PostOrderVisitor : public Visitor
                 if_else_scope_counter--;
             }
             if (if_statement->expression->get_expression_type() != "bool")
-              printf("Error: Condition has to be a type of boolean\n"); // Put line numbers in
+            {
+                std::string message = "Condition for if statement has to be a type of boolean ";
+                push_message_into_handler(message, if_statement->expression->get_node_location());
+            }
+
         }
 };
 
