@@ -345,10 +345,10 @@ class PostOrderVisitor : public Visitor
                 }
                 std::string type_1 = args[0]->get_expression_type();
                 std::string type_2 = args[1]->get_expression_type();
-                if ((type_1 != "vec3" && type_2 != "vec3") ||
-                    (type_1 != "vec4" && type_2 != "vec4") ||
-                    (type_1 != "ivec3" && type_2 != "ivec3") ||
-                    (type_1 != "ivec4" && type_2 != "ivec4"))
+                if (!  ((type_1 == "vec3" && type_2 == "vec3") ||
+                        (type_1 == "vec4" && type_2 == "vec4") ||
+                        (type_1 == "ivec3" && type_2 == "ivec3") ||
+                        (type_1 == "ivec4" && type_2 == "ivec4")))
                 {
                     printf ("Error: dp3 function has %s, %s type as arguments (both args must be vec3/vec4/ivec3/ivec4)",
                             type_1.c_str(), type_2.c_str());
