@@ -118,6 +118,7 @@ class SymbolVisitor : public Visitor
                 ErrorMessage *err_msg = new ErrorMessage(buffer.str(), temp->get_node_location());
                 error_handler->push_back_error_message(err_msg);
                 buffer.str(""); // Clear out the buffer
+                decl->type = new Type("ANY_TYPE");
             }
         }
 
@@ -130,6 +131,7 @@ class SymbolVisitor : public Visitor
                 buffer << " " << *var->get_node_location();
                 error_handler->push_back_error_message(new ErrorMessage(buffer.str(), var->get_node_location()));
                 buffer.str(""); // Clear out the buffer;
+                var->set_id_type(new Type("ANY_TYPE"));
             }
             else {
                 var->set_declaration(declaration);
@@ -146,6 +148,7 @@ class SymbolVisitor : public Visitor
                 buffer << " " << *vec_var->get_node_location();
                 error_handler->push_back_error_message(new ErrorMessage(buffer.str(), vec_var->get_node_location()));
                 buffer.str("");
+                vec_var->set_id_type(new Type("ANY_TYPE"));
             }
             else {
                 vec_var->set_declaration(declaration);
@@ -251,7 +254,7 @@ class PostOrderVisitor : public Visitor
         }
 
         virtual void visit(VectorVariable *vv){
-            if (vv->get_id_type() == nullptr)
+            if (vv->get_id_type() == nullptr || vv->get_id_type()->type_name == "ANY_TYPE")
                 return; /* We already reported errors on symbol table creation */
             std::string type_name = vv->get_id_type()->type_name;
 
@@ -269,7 +272,7 @@ class PostOrderVisitor : public Visitor
                 error_handler->push_back_error_message(new ErrorMessage(buffer.str(), vv->get_node_location()));
                 buffer.str("");
 
-                vv->set_id_type(nullptr); /* Since it is not valid */
+                vv->set_id_type(new Type("ANY_TYPE")); /* Since it is not valid, it is ok.. to leak a little i guess :) */
                 return;
             }
             std::string base_type = get_base_type(type_name);
@@ -391,19 +394,22 @@ class PostOrderVisitor : public Visitor
             /* Do Operator checking */
             int operator_type = ue->operator_type;
             std::string base_type = get_base_type(type);
+            std::string message;
             switch (operator_type) {
                 case NOT:
                 {
                     if (base_type !=  "bool") {
-                        printf("Error: Logical operators only work for boolean types\n");
-                        type = "ANY_TYPE"; /* for upper error handling */
+                        message = "Logical operators only work for boolean types ";
+                        push_message_into_handler(message, ue->get_node_location());
+                        type = "ANY_TYPE";
                     }
                     break;
                 }
                 case MINUS:
                 {
                     if (base_type == "bool") {
-                        printf("Error: Arithmatic operators only work for operator types\n");
+                        message = "Arithmatic operators only work for operator types";
+                        push_message_into_handler(message, ue->get_node_location());
                         type = "ANY_TYPE";
                     }
                     break;
@@ -419,9 +425,8 @@ class PostOrderVisitor : public Visitor
 
             std::string lhs_expr_type = be->left_expression->get_expression_type();
             std::string rhs_expr_type = be->right_expression->get_expression_type();
+            std::string message;
 
-            // printf("LHS type is %s\n", lhs_expr_type.c_str());
-            // printf("RHS type is %s\n", rhs_expr_type.c_str());
 
             /* goes back to the caller, with any type as default */
             if (lhs_expr_type == "ANY_TYPE" || rhs_expr_type == "ANY_TYPE")
@@ -430,7 +435,9 @@ class PostOrderVisitor : public Visitor
             std::string lhs_base_type = get_base_type(lhs_expr_type);
             std::string rhs_base_type = get_base_type(rhs_expr_type);
             if (lhs_base_type != rhs_base_type){
-                printf("Both operands of a binary operator must have exactly same base type\n"); /*TODO, put line number */
+                std::string message = "Both operands of a binary operator must have exactly same base type, LHS base type is " + lhs_base_type +
+                                     " and RHS base type is " + rhs_base_type + " ";
+                push_message_into_handler(message, be->get_node_location());
                 return;
             }
 
@@ -439,7 +446,7 @@ class PostOrderVisitor : public Visitor
             int rhs_vec_dimen = get_type_dimension(rhs_expr_type);
 
             /* Declare flag variables here which will be used in the follwoing */
-            bool is_arithmetic = lhs_base_type !="bool";
+            bool is_arithmetic = (lhs_base_type !="bool" && rhs_base_type !="bool");
             bool is_logical = !is_arithmetic;
             bool matching_dimen = lhs_vec_dimen == rhs_vec_dimen;
             bool is_lhs_scalar = lhs_vec_dimen == 1;
@@ -450,11 +457,13 @@ class PostOrderVisitor : public Visitor
 
             if (operator_type == AND || operator_type == OR){ /* Early returns */
                 if (is_arithmetic)  {
-                    printf("Logical operators only work for boolean types\n");
+                    message = " Logical operators only work for boolean types";
+                    push_message_into_handler(message, be->get_node_location());
                     return;
                 }
                 if (!matching_dimen) {
-                    printf("The expression dimension mismatches, one is %d, and the other is %d", lhs_vec_dimen, rhs_vec_dimen);
+                    message = "The expression dimension mismatches, one(lhs) is" + std::to_string(lhs_vec_dimen) + ",  and the other is " + std::to_string(rhs_vec_dimen);
+                    push_message_into_handler(message, be->get_node_location());
                     return;
                 }
                 ret_type = lhs_expr_type; /* Either left or right expression is a match */
@@ -463,18 +472,19 @@ class PostOrderVisitor : public Visitor
             }
 
             if (is_logical) {
-                printf("Arithmetic operators only work for arithmetic types\n");
+                message = "Arithmetic operators only work for arithmetic types ";
+                push_message_into_handler(message, be->get_node_location());
                 return;
             }
 
             /* Plus and minus, we have ss and vv */
             if (operator_type == PLUS || operator_type == MINUS) {
                 if (!matching_dimen) {
-                    printf("The expression dimension mismatches, one is %d, and the other is %d\n", lhs_vec_dimen, rhs_vec_dimen);
+                    message = "The expression dimension mismatches, one(lhs) is " + std::to_string(lhs_vec_dimen) + ",  and the other is " + std::to_string(rhs_vec_dimen) + " ";
+                    push_message_into_handler(message, be->get_node_location());
                     return;
                 }
-                printf("WOT, the LHS vec dimension is %d\n", lhs_vec_dimen);
-                ret_type = lhs_vec_dimen; /* LHS DIM = RHS DIM and both scalars and vectors work */
+                ret_type = lhs_expr_type; /* LHS DIM = RHS DIM and both scalars and vectors work */
             }
 
             else if (operator_type == TIMES) {
@@ -486,7 +496,8 @@ class PostOrderVisitor : public Visitor
                    ret_type = lhs_expr_type;
                 else { /* vv => v */
                     if (!matching_dimen) {
-                        printf("The expression dimension mismatches, one is %d, and the other is %d", lhs_vec_dimen, rhs_vec_dimen);
+                        message = "The expression dimension mismatches, one(lhs) is " + std::to_string(lhs_vec_dimen) + ",  and the other is " + std::to_string(rhs_vec_dimen) + " ";
+                        push_message_into_handler(message, be->get_node_location());
                         return;
                     }
                     ret_type = lhs_expr_type; /* Both lhs and rhs works */
@@ -495,7 +506,8 @@ class PostOrderVisitor : public Visitor
 
             else if (operator_type == CARET || operator_type == DIVIDE) {
                 if (!is_lhs_scalar || !is_rhs_scalar) {
-                    printf("Divide and Caret operator only works on scalars \n"); /* Set line number */
+                    message = "Divide and Caret operator only works on scalars ";
+                    push_message_into_handler(message, be->get_node_location());
                     return;
                }
                 ret_type = lhs_expr_type;
@@ -505,7 +517,9 @@ class PostOrderVisitor : public Visitor
                      || operator_type == G_EQ)
             {
                 if (!is_lhs_scalar || !is_rhs_scalar) {
-                    printf(" <, <=, >, >= operators only works on scalars \n"); /* Set line number */
+
+                    message= "<, <=, >, >= operators only works on scalars ";
+                    push_message_into_handler(message, be->get_node_location());
                     return;
                }
 
@@ -515,14 +529,16 @@ class PostOrderVisitor : public Visitor
             else if (operator_type == DOUBLE_EQ || operator_type == N_EQ)
             {
                 if (!matching_dimen) {
-                    printf("The expression dimension mismatches, one is %d, and the other is %d", lhs_vec_dimen, rhs_vec_dimen);
+                    message = "The expression dimension mismatches, one(lhs) is " + std::to_string(lhs_vec_dimen) + ",  and the other is " + std::to_string(rhs_vec_dimen) + " ";
+                    push_message_into_handler(message, be->get_node_location());
                     return;
                 }
                 ret_type = "bool";
             }
 
             else {
-                printf("Unknown binary operator type\n");
+                message = "Unknown binary operator type ";
+                push_message_into_handler(message, be->get_node_location());
                 return;
             }
 
@@ -543,7 +559,6 @@ class PostOrderVisitor : public Visitor
 
             Type *variable_type = ve->id_node->get_id_type(); /* Note: due to the nature of parser, id_node exists by default */
             if (variable_type != nullptr){
-                // std::string base_type = get_base_type(ve->id_node->get_id_type()->type_name);
                 ve->set_expression_type(variable_type->type_name);
             }
         }

@@ -616,8 +616,9 @@ void PrintVisitor::visit(BinaryExpression *be)
 {
     printf("(BINARY ");
     printf("%s",be->get_expression_type().c_str());
-    printf(" %s", convert_op_to_string(be->operator_type).c_str()); /*Fill in operator information */
+    printf(" %s ", convert_op_to_string(be->operator_type).c_str()); /*Fill in operator information */
     be->left_expression->visit(*this);
+    printf(" ");
     be->right_expression->visit(*this);
     printf(")");
 }
