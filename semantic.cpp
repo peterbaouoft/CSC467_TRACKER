@@ -231,13 +231,16 @@ class PostOrderVisitor : public Visitor
                     printf("\nError: rsq function has %d argument (only 2 allowed)\n", (int)args.size());
                     return;
                 }
-                for(int i=0; i<(int)args.size(); i++){
-                    std::string type = args[i]->get_expression_type();
-                    if (type != "vec3" || type != "vec4" || type != "ivec3" || type != "ivec4"){
-                        printf ("Error: dp3 function has %s type as argument (only vec3/vec4/ivec3/ivec4 allowed)", 
-                                type.c_str());
-                        return;
-                    }
+                std::string type_1 = args[0]->get_expression_type();
+                std::string type_2 = args[1]->get_expression_type();
+                if ((type_1 != "vec3" && type_2 != "vec3") || 
+                    (type_1 != "vec4" && type_2 != "vec4") ||
+                    (type_1 != "ivec3" && type_2 != "ivec3") ||
+                    (type_1 != "ivec4" && type_2 != "ivec4"))
+                {
+                    printf ("Error: dp3 function has %s, %s type as arguments (both args must be vec3/vec4/ivec3/ivec4)",
+                            type_1.c_str(), type_2.c_str());
+                    return;
                 }
                 fe->set_expression_type("float");
             }
