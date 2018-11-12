@@ -215,11 +215,22 @@ class PostOrderVisitor : public Visitor
     public:
 
         virtual void visit(Declaration *decl){
+            if (decl->type == nullptr || decl->type->type_name == "ANY_TYPE") /* Any type means an error in symbol table anslysis, and we return it */
+                return;
+
             if (decl->initial_val == nullptr) /* We don't need to check for no initalized declarations */
                 return;
 
             /* First do a type inference */
             decl->initial_val->visit(*this);
+
+            if (decl->type->type_name != decl->initial_val->get_expression_type()) /* Declaration type mismatch */
+            {
+                std::string message  = "Type mismatch for this declaration, the LHS variable " + decl->id +
+                                        " expected a " + decl->type->type_name + " type but got a " + decl->initial_val->get_expression_type() + " type\n\t ";
+                push_message_into_handler(message, decl->get_node_location());
+                /* decl->type->type_name = "ANY_TYPE"; */ /* Since an error occurred, let's set it to error type .. */
+            }
 
             /* Then we want to get its correspondent expression type */
             decl->initial_val->visit(expression_visitor);
@@ -246,7 +257,6 @@ class PostOrderVisitor : public Visitor
 
                 /* Push error messages into handler */
                 if(!is_valid) {
-                    assert(decl->get_node_location());
                     std::string message = "const qualified variable " + decl->id + " must be initalized with a literal value or"
                                           " a uniform variable, not an expression ";
                     push_message_into_handler(message, decl->get_node_location());
