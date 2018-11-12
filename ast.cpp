@@ -581,8 +581,10 @@ void PrintVisitor::visit(VariableExpression *ve)
 
 void PrintVisitor::visit(ConstructorExpression *ce)
 {
-
+    printf("(CALL ");
+    printf("%s ", ce->get_expression_type().c_str());
     ce->constructor->visit(*this);
+    printf(")");
 }
 void PrintVisitor::visit(IntLiteralExpression *ile)
 {
@@ -630,10 +632,8 @@ void PrintVisitor::visit(Function *func)
 }
 void PrintVisitor::visit(Constructor *ct)
 {
-    printf("(CALL ");
     ct->type->visit(*this);
     ct->args->visit(*this);
-    printf(")\n");
 }
 
 void PrintVisitor::visit(Arguments *args)
@@ -668,5 +668,5 @@ void PrintVisitor::visit(VectorVariable *vec_var)
         vec_var->get_id_type()->visit(*this);
     printf(" %s ", vec_var->id.c_str());
     printf("%d", vec_var->vector_index);
-
+    printf(")");
 }

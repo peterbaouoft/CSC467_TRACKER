@@ -64,9 +64,9 @@ class ErrorHandler
             int error_num = 1;
             for (ErrorMessage *err_message : m_error_list)
             {
-                printf("------------------------------------------------------------------------------------------------\n\n");
-                printf("Error %d: %s\n\n", error_num, err_message->get_error_message().c_str());
-                printf("------------------------------------------------------------------------------------------------\n\n");
+                printf("------------------------------------------------------------------------------------------------\n");
+                printf("Error %d: %s\n", error_num, err_message->get_error_message().c_str());
+                printf("------------------------------------------------------------------------------------------------\n");
                 error_num++;
             }
 
@@ -112,9 +112,9 @@ class SymbolVisitor : public Visitor
             {
                 assert(temp->get_node_location());
                 assert(decl->get_node_location());
-                buffer << "Redeclaration of symbol " << temp->id.c_str();
-                buffer << " " << *temp->get_node_location(); /* Node location should all be set for declarations */
-                buffer << ". The original Declaration is " << *decl->get_node_location();
+                buffer << "Redeclaration of symbol " << temp->id;
+                buffer << " " << *decl->get_node_location(); /* Node location should all be set for declarations */
+                buffer << ". The original Declaration is " << *temp->get_node_location();
                 ErrorMessage *err_msg = new ErrorMessage(buffer.str(), temp->get_node_location());
                 error_handler->push_back_error_message(err_msg);
                 buffer.str(""); // Clear out the buffer
@@ -126,7 +126,7 @@ class SymbolVisitor : public Visitor
             Declaration *declaration = m_symbol_table.find_symbol(var->id);
             if (declaration == nullptr){
                 assert(var->get_node_location());
-                buffer << "Missing declaration for symbol " << var->id.c_str();
+                buffer << "Missing declaration for symbol " << var->id;
                 buffer << " " << *var->get_node_location();
                 error_handler->push_back_error_message(new ErrorMessage(buffer.str(), var->get_node_location()));
                 buffer.str(""); // Clear out the buffer;
@@ -142,8 +142,8 @@ class SymbolVisitor : public Visitor
 
             if (declaration == nullptr){
                 assert(vec_var->get_node_location());
-                buffer << "Missing declaration for symbol " << vec_var->id.c_str();
-                buffer << *vec_var->get_node_location();
+                buffer << "Missing declaration for symbol " << vec_var->id;
+                buffer << " " << *vec_var->get_node_location();
                 error_handler->push_back_error_message(new ErrorMessage(buffer.str(), vec_var->get_node_location()));
                 buffer.str("");
             }
@@ -196,6 +196,11 @@ class PostOrderVisitor : public Visitor
         int if_else_scope_counter = 0;
         ExpressionVisitor expression_visitor;
         std::stringstream buffer;
+        ErrorHandler *error_handler = nullptr;
+
+    public:
+        PostOrderVisitor(ErrorHandler *err_handler) : error_handler(err_handler) {}
+
     public:
 
         virtual void visit(Declaration *decl){
@@ -228,14 +233,15 @@ class PostOrderVisitor : public Visitor
                         is_valid = false;
                 }
 
-                if(!is_valid)
-                    printf("Error: const qualified variable %s must be initalized with a literal value or"
-                            " a uniform variable, not an expression\n", decl->id.c_str());
-                // printf("The expression type is %d\n", expression_instance_type);
-                // printf("The tested variable type is %d\n", VARIABLE);
-                // printf("WOCAO\n, %s", decl->get_is_read_only() ? "true" : "false");
+                if(!is_valid) {
+                    assert(decl->get_node_location());
+                    buffer << "const qualified variable " << decl->id << " must be initalized with a literal value or"
+                              " a uniform variable, not an expression";
+                    buffer << " " << *decl->get_node_location();
+                    error_handler->push_back_error_message(new ErrorMessage(buffer.str(), decl->get_node_location()));
+                    buffer.str("");
+                }
             }
-
         }
 
         virtual void visit(VectorVariable *vv){
@@ -244,9 +250,19 @@ class PostOrderVisitor : public Visitor
             std::string type_name = vv->get_id_type()->type_name;
 
             int vec_dimension = get_type_dimension(type_name) - 1; /* array index is always one less than dimension */
-            if (vv->vector_index > vec_dimension || vv->vector_index < 0)
-                printf("Error: vector index out of bounds (vector: %s, index: %d, bound: 0-%d)",
-                        vv->id.c_str(), vv->vector_index, vec_dimension); /* TODO: add line number */
+
+            if (vv->vector_index > vec_dimension || vv->vector_index < 0) {
+                assert(vv->get_node_location());
+                assert(vv->get_declaration()->get_node_location());
+                buffer << "vector index out of bounds (vector: " << vv->id << ", index: " << vv->vector_index << ", bound: 0-" << vec_dimension << ")";
+                buffer << " " << *vv->get_node_location();
+                buffer << "\n\t " << "The declaration of the vector " << vv->id << " is " << *vv->get_declaration()->get_node_location();
+                error_handler->push_back_error_message(new ErrorMessage(buffer.str(), vv->get_node_location()));
+                buffer.str("");
+
+                vv->set_id_type(nullptr); /* Since it is not valid */
+                return;
+            }
             std::string base_type = get_base_type(type_name);
             vv->set_id_type(new Type(base_type)); /* Set the vector variable's type into base type */
         }
@@ -258,20 +274,39 @@ class PostOrderVisitor : public Visitor
             std::vector<Expression *> expression_list = ce->constructor->args->get_expression_list();
             int type_dimension = get_type_dimension (type);
 
+            int num_of_expressions = (int)expression_list.size();
+
             // check dimension
-            if (type_dimension != (int)expression_list.size()){
-                printf ("\nError: number of arguments (%d) doesn't match type dimension (%d)\n",
-                        type_dimension, (int)expression_list.size());
+            if (type_dimension != num_of_expressions){
+                assert(ce->get_node_location());
+                buffer << "Error: number of arguments (" << num_of_expressions << ")"
+                            " doesn't match type dimension (" << type_dimension << ")";
+                buffer << " " << *ce->get_node_location();
+                error_handler->push_back_error_message(new ErrorMessage(buffer.str(), ce->get_node_location()));
+                buffer.str("");
                 return; /* We might want to have early returns, as, we don't want to report too many errors ?\n */
             }
             // check type
-            for (int i=0; i< (int)expression_list.size(); i++){
-                std::string arg_type = expression_list[i]->get_expression_type();
+            for (Expression *expr : expression_list){
+                std::string arg_type = expr->get_expression_type();
+                if (arg_type == "ANY_TYPE")
+                    return;     /* We directly return because we saw an error */
                 if (arg_type != base_type){
-                    printf ("Error: argument type (%s) and constructor type (%s) mismatch\n",
-                            arg_type.c_str(), base_type.c_str());
+                    assert(expr->get_node_location());
+                    buffer << "argument type (" << arg_type << ")  and constructor type (" << base_type << ") mismatch ";
+                    buffer << " " << *expr->get_node_location() << "\n\t ";
                 }
             }
+
+            if (buffer.str() != "") {
+                assert(ce->get_node_location());
+                buffer << "The Constructor Expression is " << *ce->get_node_location();
+                error_handler->push_back_error_message(new ErrorMessage(buffer.str(), ce->get_node_location()));
+                buffer.str("");
+                return;
+            }
+
+            ce->set_expression_type(type);
         }
 
         virtual void visit(FunctionExpression *fe){
@@ -635,7 +670,7 @@ int semantic_check(node * ast)
     PredefinedVariableVisitor predefined_visitor;
     ErrorHandler error_handler;
     SymbolVisitor symbol_visitor(&error_handler);
-    PostOrderVisitor postorder_visitor;
+    PostOrderVisitor postorder_visitor(&error_handler);
 
     /* This creates predefined variables, and load the source file into the scope */
     ast->visit(predefined_visitor);
