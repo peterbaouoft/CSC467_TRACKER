@@ -329,13 +329,12 @@ class PostOrderVisitor : public Visitor
                     printf("\nError: rsq function has %d argument (only 1 allowed)\n", (int)args.size());
                     return;
                 }
-                for(int i=0; i<(int)args.size(); i++){
-                    std::string type = args[i]->get_expression_type();
-                    if (type != "int" || type != "float"){
-                        printf("Error: rsq function has %s type as argument (only int/float allowed)\n", type.c_str());
-                        return;
-                    }
+                std::string type = args[0]->get_expression_type();
+                if (!(type == "int" || type == "float")){
+                    printf("Error: rsq function has %s type as argument (only int/float allowed)\n", type.c_str());
+                    return;
                 }
+                
                 fe->set_expression_type("float");
             }
             if (function_name == "dp3"){
