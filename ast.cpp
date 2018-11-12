@@ -187,9 +187,7 @@ node *ast_allocate(NodeKind type, ...)
         /* Here, we get the specific type for a single expression and
          * instantiate its subtype accordingly */
         ExpressionType et = static_cast<ExpressionType>(va_arg(args, int));
-        YYLTYPE *rule_loc = va_arg(args, YYLTYPE *);
-        NodeLocation *rule_location = new NodeLocation(rule_loc->first_line, rule_loc->last_line,
-                                                        rule_loc->first_column, rule_loc->last_column);
+
         switch (et)
         {
 
@@ -197,23 +195,18 @@ node *ast_allocate(NodeKind type, ...)
         {
             Constructor *ct = va_arg(args, Constructor *);
             ret_node = new ConstructorExpression(ct);
-            ret_node->set_node_location(rule_location);
             break;
         }
         case FUNCTION:
         {
             Function *func = va_arg(args, Function *);
             ret_node = new FunctionExpression(func);
-
-            ret_node->set_node_location(rule_location);
             break;
         }
         case VARIABLE:
         {
             IdentifierNode *id_node = va_arg(args, IdentifierNode*);
             ret_node = new VariableExpression(id_node);
-
-            ret_node->set_node_location(rule_location);
             break;
         }
 
@@ -222,26 +215,26 @@ node *ast_allocate(NodeKind type, ...)
             bool bool_literal = static_cast<bool>(va_arg(args, int));
             ret_node = new BoolLiteralExpression(bool_literal);
 
-            ret_node->set_node_location(rule_location);
             break;
         }
         case INT_LITERAL:
         {
             int int_literal = va_arg(args, int);
             ret_node = new IntLiteralExpression(int_literal);
-
-            ret_node->set_node_location(rule_location);
             break;
         }
         case FLOAT_LITERAL:
         {
             float float_literal = static_cast<float>(va_arg(args, double));
             ret_node = new FloatLiteralExpression(float_literal);
-
-            ret_node->set_node_location(rule_location);
             break;
         }
         }
+
+        YYLTYPE *rule_loc = va_arg(args, YYLTYPE *);
+        NodeLocation *rule_location = new NodeLocation(rule_loc->first_line, rule_loc->last_line,
+                                                        rule_loc->first_column, rule_loc->last_column);
+        ret_node->set_node_location(rule_location);
         break;
     }
 

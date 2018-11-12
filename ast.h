@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <cassert>
+#include <ostream>
 
 /**************************************************************************
  *                              FORWARD DECLARATIONS                      *
@@ -154,7 +155,23 @@ class NodeLocation
   public:
     NodeLocation(int first_line, int last_line, int first_col, int last_col) :
       m_first_line(first_line), m_last_line(last_line), m_first_col(first_col), m_last_col(last_col) {}
+
+    int get_first_line() const {return m_first_line;}
+    int get_last_line() const {return m_last_line;}
+    int get_first_col() const {return m_first_col;}
+    int get_last_col() const {return m_last_col;}
+
 };
+
+inline std::ostream& operator<<(std::ostream &out, NodeLocation const& data) {
+      out << "at line ";
+      out << data.get_first_line() << ':';
+      out << data.get_first_col();
+      out << " to " << data.get_last_line() << ':';
+      out << data.get_last_col();
+
+      return out;
+}
 
 class Node
 {

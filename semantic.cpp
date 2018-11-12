@@ -6,6 +6,7 @@
 #include "common.h"
 #include "parser.tab.h"
 #include <vector>
+#include <sstream>
 
 int get_type_dimension (const std::string &type){
     if (type == "bvec2" || type == "ivec2" || type == "vec2")
@@ -29,10 +30,66 @@ std::string get_base_type (const std::string type){
         return type;
 }
 
+// std::string create_messages (std::string message, NodeLocation *node_location)
+// {
+//     // va_list vl;
+
+//     // va_start(vl, node_location);
+//     assert(node_location);
+//     buffer << "Missing declaration for symbol " << var->id.c_str();
+//                 buffer << *var->get_node_location();
+
+// }
+
+class ErrorMessage
+{
+    private:
+        std::string error_message;
+        NodeLocation *error_location;
+    public:
+        ErrorMessage(const std::string &err_msg, NodeLocation *err_loc)
+            : error_message(err_msg), error_location(err_loc) {}
+        std::string get_error_message() const {return error_message;}
+        NodeLocation *get_error_location() const {return error_location;}
+
+};
+
+class ErrorHandler
+{
+    private:
+        std::vector<ErrorMessage *> m_error_list;
+    public:
+        bool load_source_file(); // We want to load the input file for meaningful message output
+        void print_out_errors(){
+            int error_num = 1;
+            for (ErrorMessage *err_message : m_error_list)
+            {
+                printf("------------------------------------------------------------------------------------------------\n\n");
+                printf("Error %d: %s\n\n", error_num, err_message->get_error_message().c_str());
+                printf("------------------------------------------------------------------------------------------------\n\n");
+                error_num++;
+            }
+
+        }
+        void push_back_error_message(ErrorMessage *err_message) {m_error_list.push_back(err_message);}
+
+    public:
+        ~ErrorHandler() {
+            for (ErrorMessage *err_msg : m_error_list)
+                delete err_msg;
+        }
+};
+
 class SymbolVisitor : public Visitor
 {
     private:
         SymbolTablex m_symbol_table;
+        ErrorHandler *error_handler;
+        std::stringstream buffer;
+
+    public:
+        SymbolVisitor(ErrorHandler *err_handler) : error_handler(err_handler) {}
+
     public:
         virtual void visit(Scope *scope)
         {
@@ -53,8 +110,14 @@ class SymbolVisitor : public Visitor
             Declaration *temp = m_symbol_table.create_symbol(decl);
             if (temp)
             {
-                printf("Error: Redeclaration of symbol %s with type %s\n",
-                        temp->id.c_str(), temp->type->type_name.c_str());
+                assert(temp->get_node_location());
+                assert(decl->get_node_location());
+                buffer << "Redeclaration of symbol " << temp->id.c_str();
+                buffer << " " << *temp->get_node_location(); /* Node location should all be set for declarations */
+                buffer << ". The original Declaration is " << *decl->get_node_location();
+                ErrorMessage *err_msg = new ErrorMessage(buffer.str(), temp->get_node_location());
+                error_handler->push_back_error_message(err_msg);
+                buffer.str(""); // Clear out the buffer
             }
         }
 
@@ -62,7 +125,11 @@ class SymbolVisitor : public Visitor
         {
             Declaration *declaration = m_symbol_table.find_symbol(var->id);
             if (declaration == nullptr){
-                printf("Error: Missing declaration for symbol %s\n", var->id.c_str());
+                assert(var->get_node_location());
+                buffer << "Missing declaration for symbol " << var->id.c_str();
+                buffer << " " << *var->get_node_location();
+                error_handler->push_back_error_message(new ErrorMessage(buffer.str(), var->get_node_location()));
+                buffer.str(""); // Clear out the buffer;
             }
             else {
                 var->set_declaration(declaration);
@@ -74,7 +141,11 @@ class SymbolVisitor : public Visitor
             Declaration *declaration = m_symbol_table.find_symbol(vec_var->id);
 
             if (declaration == nullptr){
-                printf("Error: Missing declaration for symbol %s\n", vec_var->id.c_str());
+                assert(vec_var->get_node_location());
+                buffer << "Missing declaration for symbol " << vec_var->id.c_str();
+                buffer << *vec_var->get_node_location();
+                error_handler->push_back_error_message(new ErrorMessage(buffer.str(), vec_var->get_node_location()));
+                buffer.str("");
             }
             else {
                 vec_var->set_declaration(declaration);
@@ -124,6 +195,7 @@ class PostOrderVisitor : public Visitor
     private:
         int if_else_scope_counter = 0;
         ExpressionVisitor expression_visitor;
+        std::stringstream buffer;
     public:
 
         virtual void visit(Declaration *decl){
@@ -561,7 +633,8 @@ int semantic_check(node * ast)
 {
 
     PredefinedVariableVisitor predefined_visitor;
-    SymbolVisitor symbol_visitor;
+    ErrorHandler error_handler;
+    SymbolVisitor symbol_visitor(&error_handler);
     PostOrderVisitor postorder_visitor;
 
     /* This creates predefined variables, and load the source file into the scope */
@@ -574,6 +647,6 @@ int semantic_check(node * ast)
     ast->visit(postorder_visitor);
 
     /* This section prints out the errors collected overall, including line numbers */
-
+    error_handler.print_out_errors();
     return 0;
 }
