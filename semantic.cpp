@@ -544,7 +544,7 @@ class PostOrderVisitor : public Visitor
             Type *variable_type = ve->id_node->get_id_type(); /* Note: due to the nature of parser, id_node exists by default */
             if (variable_type != nullptr){
                 // std::string base_type = get_base_type(ve->id_node->get_id_type()->type_name);
-                ve->set_expression_type(variable_type->type_name); /* TODO: think about base type.. when printing */
+                ve->set_expression_type(variable_type->type_name);
             }
         }
         virtual void visit(AssignStatement *assign_stmt){
@@ -560,7 +560,8 @@ class PostOrderVisitor : public Visitor
                 return;
 
             if (rhs_type != lhs_type) {
-                printf("Error: Can not assign a different type expression to a variable\n"); // Put line number
+                std::string message = "Can not assign a different type expression to a variable, Expected: " + lhs_type + " But got: " + rhs_type;
+                push_message_into_handler(message, assign_stmt->get_node_location());
                 return;
             }
 
@@ -568,13 +569,27 @@ class PostOrderVisitor : public Visitor
             Declaration *variable_declaration = assign_stmt->variable->get_declaration();
             {
                 if (variable_declaration) {
-                    if (variable_declaration->get_is_const())
-                        printf("Error : const qualified variable %s can not be re-assigned\n", variable_declaration->id.c_str());
-                    else if(variable_declaration->get_is_read_only())
-                        printf("Error: Can not assign to a read only variable %s\n", variable_declaration->id.c_str());
-                    else if(if_else_scope_counter != 0 && variable_declaration->get_is_write_only())
-                        printf("Error: Variable %s with Result type classes can not be assigned anywhere in the scope of an if or else statement \n", variable_declaration->id.c_str());
+                    std::string message;
+                    if (variable_declaration->get_is_const()) {
+                        if (variable_declaration->get_node_location()) {// Means it is a normal defined constant variable
+                            buffer << "const qualified variable " << variable_declaration->id << " can not be re-assigned, ";
+                            buffer << "Its declaration is " << *variable_declaration->get_node_location() << "\n\t ";
+                            buffer << "The Assign Statament is " << assign_stmt->get_node_location();
+                            error_handler->push_back_error_message(new ErrorMessage(buffer.str(), assign_stmt->get_node_location()));
+                            buffer.str("");
 
+                            return;
+                        }
+                        else
+                            message = "Uniform type classes Variable " + assign_stmt->variable->id + " is const qualified, and can not be re-assigned ";
+                    }
+                    else if(variable_declaration->get_is_read_only())
+                        message = "Can not assign to a read only variable " + variable_declaration->id;
+                    else if(if_else_scope_counter != 0 && variable_declaration->get_is_write_only())
+                        message = "Variable " + variable_declaration->id + " with Result type classes can not be assigned anywhere in the scope of an if or else statement";
+
+                    if (message != "")
+                        push_message_into_handler(message, assign_stmt->get_node_location());
                     return;
                 }
             }

@@ -5,4 +5,9 @@
     gl_Light_Half = test; /* Assign Error */
     test = gl_FragColor; /* Read Error */
 
+    if (true)
+        gl_FragColor = test;
+    else 
+        gl_FragDepth = false;
+    gl_FragColor = test;
 }
