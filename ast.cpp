@@ -110,8 +110,6 @@ node *ast_allocate(NodeKind type, ...)
         }
 
         string type = type_list[type_index][dimen_index - 1]; /* dim goes from 1 to 4 */
-        cout << "Test instantiations\n\n"
-             << type;
 
         ret_node = new Type(type);
         break;
@@ -403,6 +401,7 @@ void Visitor::visit(Statement *statement)
 void Visitor::visit(AssignStatement *assign_stmt)
 {
     assign_stmt->variable->visit(*this);
+    printf(" ");
     assign_stmt->expression->visit(*this);
 }
 
@@ -543,6 +542,7 @@ void PrintVisitor::visit(Statement *stmt) {
 void PrintVisitor::visit(AssignStatement *assign_stmt)
 {
     printf("\t\t(ASSIGN ");
+    printf("%s ", assign_stmt->variable->get_id_type() ? assign_stmt->variable->get_id_type()->type_name.c_str() : "ANY_TYPE");
     assign_stmt->variable->visit(*this);
     printf(" ");
     assign_stmt->expression->visit(*this);
@@ -553,6 +553,7 @@ void PrintVisitor::visit(IfStatement *if_statement)
 {
     printf("\t(IF ");
     if_statement->expression->visit(*this);
+    printf(" ");
     if_statement->statement->visit(*this);
     if (if_statement->else_statement){
         printf(" ");
@@ -606,8 +607,7 @@ void PrintVisitor::visit(UnaryExpression *ue)
 {
     printf("(UNARY ");
     printf("%s", ue->get_expression_type().c_str());
-    // ue->get_unary_expr_type()->visit(*this);
-    printf(" %s", convert_op_to_string(ue->operator_type).c_str()); /*Fill in operator information */
+    printf(" %s ", convert_op_to_string(ue->operator_type).c_str()); /*Fill in operator information */
     ue->right_expression->visit(*this);
     printf(")");
 }
@@ -627,20 +627,18 @@ void PrintVisitor::visit(BinaryExpression *be)
 void PrintVisitor::visit(Function *func)
 {
     printf("(CALL");
-    printf(" %s", func->function_name.c_str());
+    printf(" %s ", func->function_name.c_str());
     func->arguments->visit(*this);
     printf(")\n");
 
 }
 void PrintVisitor::visit(Constructor *ct)
 {
-    ct->type->visit(*this);
     ct->args->visit(*this);
 }
 
 void PrintVisitor::visit(Arguments *args)
 {
-    printf(" ");
     for (Expression *expr : args->get_expression_list()){
         assert(expr != nullptr);
         expr->visit(*this);

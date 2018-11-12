@@ -6,4 +6,6 @@
 
 	const int ad = 5;
 	const vec4 d = gl_Light_Half; 
+
+    ad = 5;
 }

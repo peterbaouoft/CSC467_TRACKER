@@ -61,12 +61,13 @@ class ErrorHandler
     public:
         bool load_source_file(); // We want to load the input file for meaningful message output
         void print_out_errors(){
+            errorOccurred = 1;
             int error_num = 1;
             for (ErrorMessage *err_message : m_error_list)
             {
-                printf("------------------------------------------------------------------------------------------------\n");
-                printf("Error %d: %s\n", error_num, err_message->get_error_message().c_str());
-                printf("------------------------------------------------------------------------------------------------\n");
+                fprintf(errorFile, "------------------------------------------------------------------------------------------------\n");
+                fprintf(errorFile, "Error %d: %s\n", error_num, err_message->get_error_message().c_str());
+                fprintf(errorFile, "------------------------------------------------------------------------------------------------\n");
                 error_num++;
             }
 
@@ -586,12 +587,12 @@ class PostOrderVisitor : public Visitor
                     std::string message;
                     if (variable_declaration->get_is_const()) {
                         if (variable_declaration->get_node_location()) {// Means it is a normal defined constant variable
+                            assert(assign_stmt->get_node_location());
                             buffer << "const qualified variable " << variable_declaration->id << " can not be re-assigned, ";
                             buffer << "Its declaration is " << *variable_declaration->get_node_location() << "\n\t ";
-                            buffer << "The Assign Statament is " << assign_stmt->get_node_location();
+                            buffer << "The Assign Statament is " << *assign_stmt->get_node_location();
                             error_handler->push_back_error_message(new ErrorMessage(buffer.str(), assign_stmt->get_node_location()));
                             buffer.str("");
-
                             return;
                         }
                         else
@@ -600,7 +601,7 @@ class PostOrderVisitor : public Visitor
                     else if(variable_declaration->get_is_read_only())
                         message = "Can not assign to a read only variable " + variable_declaration->id;
                     else if(if_else_scope_counter != 0 && variable_declaration->get_is_write_only())
-                        message = "Variable " + variable_declaration->id + " with Result type classes can not be assigned anywhere in the scope of an if or else statement";
+                        message = "Variable " + variable_declaration->id + " with Result type classes can not be assigned anywhere in the scope of an if or else statement ";
 
                     if (message != "")
                         push_message_into_handler(message, assign_stmt->get_node_location());
