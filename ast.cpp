@@ -629,7 +629,7 @@ void PrintVisitor::visit(Function *func)
     printf("(CALL");
     printf(" %s ", func->function_name.c_str());
     func->arguments->visit(*this);
-    printf(")\n");
+    printf(")");
 
 }
 void PrintVisitor::visit(Constructor *ct)

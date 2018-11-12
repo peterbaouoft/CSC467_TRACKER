@@ -255,10 +255,18 @@ class PostOrderVisitor : public Visitor
                         is_valid = false;
                 }
 
+                else if (expression_instance_type ==  CONSTRUCTOR_EXPRESSION)
+                {
+                    if (!decl->initial_val->get_is_const())
+                        is_valid = false;
+                    else
+                        is_valid = true;
+                }
+
                 /* Push error messages into handler */
                 if(!is_valid) {
                     std::string message = "const qualified variable " + decl->id + " must be initalized with a literal value or"
-                                          " a uniform variable, not an expression ";
+                                          " a uniform variable, or a const constructor expression ";
                     push_message_into_handler(message, decl->get_node_location());
                 }
             }
@@ -296,9 +304,9 @@ class PostOrderVisitor : public Visitor
             std::string base_type = get_base_type (ce->constructor->type->type_name);
             std::vector<Expression *> expression_list = ce->constructor->args->get_expression_list();
             int type_dimension = get_type_dimension (type);
-
             int num_of_expressions = (int)expression_list.size();
 
+            bool is_const_constructor = true;
             // check dimension
             if (type_dimension != num_of_expressions){
                 /* Push error messages into handler */
@@ -317,6 +325,8 @@ class PostOrderVisitor : public Visitor
                     buffer << "argument type (" << arg_type << ")  and constructor type (" << base_type << ") mismatch ";
                     buffer << " " << *expr->get_node_location() << "\n\t ";
                 }
+                if (!expr->get_is_const())
+                    is_const_constructor = false;
             }
 
             /* Push error messages into handler */
@@ -325,7 +335,8 @@ class PostOrderVisitor : public Visitor
                 push_message_into_handler(message, ce->get_node_location());
                 return;
             }
-
+            if (is_const_constructor) /* This means constructor itself is a constant constructor expression */
+                ce->set_is_const(true);
             ce->set_expression_type(type);
         }
 
@@ -345,7 +356,7 @@ class PostOrderVisitor : public Visitor
                     printf("Error: rsq function has %s type as argument (only int/float allowed)\n", type.c_str());
                     return;
                 }
-                
+
                 fe->set_expression_type("float");
             }
             if (function_name == "dp3"){
@@ -570,8 +581,11 @@ class PostOrderVisitor : public Visitor
             Type *variable_type = ve->id_node->get_id_type(); /* Note: due to the nature of parser, id_node exists by default */
             if (variable_type != nullptr){
                 ve->set_expression_type(variable_type->type_name);
+                if (declaration->get_is_const ()) /* We only handle the trivial case for variable, whether the declaration is const or not */
+                   ve->set_is_const(true);
             }
         }
+
         virtual void visit(AssignStatement *assign_stmt){
             /* Visit the members to set the inference types */
             assign_stmt->variable->visit(*this);

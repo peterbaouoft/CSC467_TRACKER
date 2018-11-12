@@ -205,9 +205,12 @@ class Expression : public Node
 {
   private:
     std::string type = "ANY_TYPE";
+    bool m_is_const = false;
   public:
     virtual std::string get_expression_type() const {return type;}
     virtual void set_expression_type(std::string type_str) {type = type_str;}
+    virtual bool get_is_const() const { return m_is_const; }
+    void set_is_const( bool is_const) { m_is_const = is_const;}
 
   public:
     virtual ~Expression() {}
@@ -538,6 +541,8 @@ class IntLiteralExpression : public Expression
     {
         visitor.visit(this);
     };
+    virtual bool get_is_const () const {return true; }
+
 };
 
 class BoolLiteralExpression : public Expression
@@ -550,6 +555,8 @@ class BoolLiteralExpression : public Expression
     {
         visitor.visit(this);
     };
+
+    virtual bool get_is_const() const {return true;}
 };
 
 class FloatLiteralExpression : public Expression
@@ -562,6 +569,8 @@ class FloatLiteralExpression : public Expression
     {
         visitor.visit(this);
     };
+
+    virtual bool get_is_const() const {return true;}
 };
 
 class UnaryExpression : public Expression
