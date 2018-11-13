@@ -346,22 +346,27 @@ class PostOrderVisitor : public Visitor
             std::string function_name = fe->function->function_name;
             std::vector<Expression *> args = fe->function->arguments->get_expression_list();
 
+            int args_size = (int)args.size();
+
             if (function_name == "rsq"){
-                if (args.size() != 1){
-                    printf("\nError: rsq function has %d argument (only 1 allowed)\n", (int)args.size());
+                if (args_size != 1){
+                    std::string message = "rsq function has " + std::to_string(args_size) + " argument (only 1 allowed) ";
+                    push_message_into_handler(message, fe->get_node_location());
                     return;
                 }
                 std::string type = args[0]->get_expression_type();
                 if (!(type == "int" || type == "float")){
-                    printf("Error: rsq function has %s type as argument (only int/float allowed)\n", type.c_str());
+                    std::string message = "rsq function has " + type + " type as argument (only int/float allowed) ";
+                    push_message_into_handler(message, fe->get_node_location());
                     return;
                 }
 
                 fe->set_expression_type("float");
             }
             if (function_name == "dp3"){
-                if (args.size() != 2){
-                    printf("\nError: rsq function has %d argument (only 2 allowed)\n", (int)args.size());
+                if (args_size != 2){
+                    std::string message = "dp3 function has " + std::to_string(args_size) + " argument (only 2 allowed)";
+                    push_message_into_handler(message, fe->get_node_location());
                     return;
                 }
                 std::string type_1 = args[0]->get_expression_type();
@@ -371,21 +376,23 @@ class PostOrderVisitor : public Visitor
                         (type_1 == "ivec3" && type_2 == "ivec3") ||
                         (type_1 == "ivec4" && type_2 == "ivec4")))
                 {
-                    printf ("Error: dp3 function has %s, %s type as arguments (both args must be vec3/vec4/ivec3/ivec4)",
-                            type_1.c_str(), type_2.c_str());
+                    std::string message =  "dp3 function has " + type_1 + ", " + type_2 + " type as arguments (both args must be vec3/vec4/ivec3/ivec4) ";
+                    push_message_into_handler(message, fe->get_node_location());
                     return;
                 }
                 fe->set_expression_type("float");
             }
             if (function_name == "lit"){
-                if (args.size() != 1){
-                    printf("\nError: lit function has %d argument (only 1 allowed)\n", (int)args.size());
+                if (args_size != 1){
+                    std::string message = "lit function has " + std::to_string(args_size) +  "argument (only 1 allowed) ";
+                    push_message_into_handler(message, fe->get_node_location());
                     return;
                 }
                 for(int i=0; i<(int)args.size(); i++){
                     std::string type = args[i]->get_expression_type();
                     if (type != "vec4"){
-                        printf("Error: lit function has %s type as argument (only vec4 allowed)\n", type.c_str());
+                        std::string message = "lit function has " + type + " type as argument (only vec4 allowed) ";
+                        push_message_into_handler(message, fe->get_node_location());
                         return;
                     }
                 }
