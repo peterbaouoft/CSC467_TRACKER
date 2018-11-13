@@ -61,7 +61,7 @@ class ErrorHandler
     public:
         bool load_source_file(); // We want to load the input file for meaningful message output
         void print_out_errors(){
-            errorOccurred = 1;
+            errorOccurred = ((int)m_error_list.size() > 0) ? 1 : 0;
             int error_num = 1;
             for (ErrorMessage *err_message : m_error_list)
             {
@@ -218,12 +218,15 @@ class PostOrderVisitor : public Visitor
             if (decl->type == nullptr || decl->type->type_name == "ANY_TYPE") /* Any type means an error in symbol table anslysis, and we return it */
                 return;
 
-            if (decl->initial_val == nullptr) /* We don't need to check for no initalized declarations */
+            if (decl->initial_val == nullptr)  /* We don't need to check for no initalized declarations */
                 return;
 
             /* First do a type inference */
             decl->initial_val->visit(*this);
 
+            if (decl->initial_val->get_expression_type() == "ANY_TYPE")
+                return;
+            
             if (decl->type->type_name != decl->initial_val->get_expression_type()) /* Declaration type mismatch */
             {
                 std::string message  = "Type mismatch for this declaration, the LHS variable " + decl->id +
@@ -588,7 +591,7 @@ class PostOrderVisitor : public Visitor
             Type *variable_type = ve->id_node->get_id_type(); /* Note: due to the nature of parser, id_node exists by default */
             if (variable_type != nullptr){
                 ve->set_expression_type(variable_type->type_name);
-                if (declaration->get_is_const ()) /* We only handle the trivial case for variable, whether the declaration is const or not */
+                if (declaration && declaration->get_is_const ()) /* We only handle the trivial case for variable, whether the declaration is const or not */
                    ve->set_is_const(true);
             }
         }
@@ -606,7 +609,7 @@ class PostOrderVisitor : public Visitor
                 return;
 
             if (rhs_type != lhs_type) {
-                std::string message = "Can not assign a different type expression to a variable, Expected: " + lhs_type + " But got: " + rhs_type;
+                std::string message = "Can not assign a different type expression to a variable, Expected: " + lhs_type + " But got: " + rhs_type + " ";
                 push_message_into_handler(message, assign_stmt->get_node_location());
                 return;
             }
@@ -630,7 +633,7 @@ class PostOrderVisitor : public Visitor
                             message = "Uniform type classes Variable " + assign_stmt->variable->id + " is const qualified, and can not be re-assigned ";
                     }
                     else if(variable_declaration->get_is_read_only())
-                        message = "Can not assign to a read only variable " + variable_declaration->id;
+                        message = "Can not assign to a read only variable " + variable_declaration->id + " ";
                     else if(if_else_scope_counter != 0 && variable_declaration->get_is_write_only())
                         message = "Variable " + variable_declaration->id + " with Result type classes can not be assigned anywhere in the scope of an if or else statement ";
 
