@@ -1,4 +1,6 @@
 /***********************************************************************
+ * **YOUR GROUP INFO SHOULD GO HERE**
+ *
  * globalvars.c
  *
  * CSC467 Project Compiler Shared Global Variables
@@ -44,6 +46,7 @@ int dumpInstructions;
  * **NOTE** If you need to add global variables for phases 1 to 4, add
  * them below this comment.
  **********************************************************************/
+
 
 
 
