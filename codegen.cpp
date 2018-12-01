@@ -231,7 +231,6 @@ class codeGenVisitor : public Visitor
             push_back_instruction(scope_str);
         }
     public:
-        /* Empty visiting statements, as we only need to retrieve the current level type */
 
         virtual void visit(Declaration *decl) {
             std::string decl_instructions = assembly_table.get_assembly_translation(DECLARATION_NODE, decl);
@@ -267,29 +266,29 @@ class codeGenVisitor : public Visitor
             if (expression_instance_type == BOOL_EXPRESSION) {
                 BoolLiteralExpression *ble =  reinterpret_cast<BoolLiteralExpression *>(if_statement->expression);
                 expression_val = ble->bool_literal;
-            }
 
-            // We do deadcode elimination here
-            if (expression_val){
+                // We do deadcode elimination here, and ignore either if stataement, or else statement;
+                if (expression_val){
+                    if_statement->statement->visit(*this);
+                }
+                else {
+                    if (if_statement->else_statement)
+                        if_statement->else_statement->visit(*this);
+                }
+            }
+            else{
                 if_statement->statement->visit(*this);
-            }
-            else {
                 if (if_statement->else_statement)
-                    if_statement->else_statement->visit(*this);
+                        if_statement->else_statement->visit(*this);
             }
+
         }
-
-        // virtual void visit(NestedScope *ns) {}
-        // virtual void visit(EmptyStatement *es) {}
-
-        // virtual void visit(ConstructorExpression *ce) {}
 
         virtual void visit(BinaryExpression *be) {
 
             be->left_expression->visit(*this);
             be->right_expression->visit(*this);
 
-            // std::cout << "debug messages bin expression \n" << std::endl;
             // Get the left expression and right expression register name (it can be in memory or just register)
             std::string left_result_name = be->left_expression->get_result_register_name();
             std::string right_result_name = be->right_expression->get_result_register_name();
@@ -301,19 +300,17 @@ class codeGenVisitor : public Visitor
 
             std::string binary_result_instruction = assembly_table.get_assembly_translation(BINARY_EXPRESSION_NODE, be, operator_type, \
                                                                                             left_result_name, right_result_name);
-            // std::cout << "Debug the result instruction is " << binary_result_instruction << std::endl;
             push_back_instruction(binary_result_instruction);
         }
 
-        // virtual void visit(VariableExpression *ve) {}
-        // virtual void visit(FunctionExpression *fe) {s}
+        virtual void visit(VariableExpression *ve) {
+            ve->id_node->visit(*this);
 
+            ve->id_node->visit(expr_visitor);
+            int variable_type = expr_visitor.get_expression_instance_type();
 
-        // virtual void visit(Function *f) {}
-        // virtual void visit(Constructor *c) {}
-        virtual void visit(VectorVariable *vv) {
-            std::string vector_str = assembly_table.get_assembly_translation(VECTOR_NODE, vv);
-            push_back_instruction(vector_str);
+            if (expression_in)
+
         }
 
     public:

@@ -82,6 +82,8 @@ typedef enum
     CONSTRUCTOR_EXPRESSION,
     VARIABLE,
     FUNCTION,
+    TEMP_ID_EXPRESSION,
+    TEMP_VECTOR_EXPRESSION,
 } ExpressionType;
 
 typedef enum
@@ -663,6 +665,9 @@ class ExpressionVisitor : public Visitor
 
         virtual void visit(Function *f) {}
         virtual void visit(Constructor *c) {}
+
+        virtual void visit(IdentifierNode *var) {set_expression_instance_type(TEMP_ID_EXPRESSION);}
+        virtual void visit(VectorVariable *vec_var) {set_expression_instance_type(TEMP_VECTOR_EXPRESSION);}
 
 };
 
