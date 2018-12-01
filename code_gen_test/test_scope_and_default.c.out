@@ -1,4 +1,9 @@
 !!ARBfp1.0
 
+PARAM __zero__vector__ = {0.0, 0.0, 0.0, 0.0};
+
+TEMP __a__;
+
 fragment.color.x
 fragment.color.y
+END

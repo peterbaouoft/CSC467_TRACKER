@@ -13,6 +13,7 @@ class ARBAssemblyTable
 
         std::stringstream buffer;
         std::unordered_map<std::string, std::string> m_name_map;
+        std::string zero_vector = "__zero__vector__";
 
     public:
         /* Init of assembly table, create name mapping, ARB assembly prefix and so on */
@@ -34,11 +35,13 @@ class ARBAssemblyTable
             m_name_map.emplace("env3", "program.env[3]");
         }
 
-        void insert_register_name_into_map(const std::string variable_name){
-            if (get_id_to_name_mapping(variable_name) == variable_name)
-                assert(0); // We don't handle if and else statements in our compiler yet
+        std::string insert_register_name_into_map(const std::string variable_name){
+            if (get_id_to_name_mapping(variable_name) != variable_name)
+                return ""; // We don't handle if and else statements in our compiler yet
 
-            m_name_map.emplace(variable_name, "__" + variable_name + "__");
+            std::string created_register_name = "__" + variable_name + "__";
+            m_name_map.emplace(variable_name, created_register_name);
+            return created_register_name;
         }
 
     public:
@@ -60,6 +63,35 @@ class ARBAssemblyTable
 
             return "ERROR";
         }
+
+        std::string create_assembly_instruction(AssemblyInstructionType type, ...){
+            va_list args;
+            va_start(args, type);
+
+            std::string result_str = "";
+            switch (type)
+            {
+            case MOV_INSTRUCTION:
+            {
+                std::string output_register = va_arg(args, std::string);
+                std::string input_register = va_arg(args, std::string);
+                result_str = "MOV " + output_register + ", " + input_register + ";" ;
+                break;
+            }
+
+            case TEMP_INSTRUCTION:
+            {
+                std::string register_name = va_arg(args, std::string);
+                result_str = "TEMP " + register_name + ";";
+                break;
+
+            }
+            }
+
+            va_end(args); // End the va_args
+            return result_str;
+        }
+
         std::string get_assembly_translation(NodeKind type, ...){
             va_list args;
             va_start(args, type);
@@ -71,8 +103,28 @@ class ARBAssemblyTable
             {
                 /* We only want the of ABVfp1.0 to appear once */
                 buffer << "!!ARBfp1.0" << std::endl;
+                buffer << std::endl;
+                buffer << "PARAM __zero__vector__ = {0.0, 0.0, 0.0, 0.0};" << std::endl;
                 break;
             }
+
+            case DECLARATION_NODE:
+            {
+                Declaration *decl = va_arg(args, Declaration *);
+                // Get the register name of the declaration
+                std::string decl_register_name = insert_register_name_into_map(decl->id);
+
+                if (decl_register_name == "") // Do nothing for the predefined variables or duplicated names
+                    break;
+
+                buffer << create_assembly_instruction(TEMP_INSTRUCTION, decl_register_name) << std::endl;
+
+                if (decl->initial_val == nullptr)
+                    buffer << create_assembly_instruction(MOV_INSTRUCTION, decl_register_name, zero_vector) << std::endl;
+
+                break;
+            }
+
             case VECTOR_NODE:
             {
                 VectorVariable *vec_var = va_arg(args, VectorVariable*);
@@ -82,6 +134,8 @@ class ARBAssemblyTable
             }
 
             }
+
+            va_end(args);
             result_str = buffer.str();
             buffer.str("");
             return result_str;
@@ -94,6 +148,7 @@ class ARBAssemblyTable
             else
                 return name_iter->second; /* Return the mapped result */
         }
+
 
     // Destructor
     public:
@@ -114,6 +169,19 @@ class codeGenVisitor : public Visitor
             push_back_instruction(scope_str);
             scope->declarations->visit(*this);
             scope->statements->visit(*this);
+            push_back_instruction("END");
+        }
+
+        virtual void visit(Declaration *decl) {
+            std::string decl_instructions = assembly_table.get_assembly_translation(DECLARATION_NODE, decl);
+            if (decl_instructions == "") // Predefined or error out
+                return;
+
+            push_back_instruction(decl_instructions); // Collect the declarations
+
+            if (decl->initial_val != nullptr) {
+                decl->initial_val->visit(*this);
+            }
         }
         // virtual void visit(Declaration *decl) {}
         // virtual void visit (Declarations *decls) {}
@@ -159,4 +227,6 @@ int genCode(node *ast)
     ast->visit(code_visitor);
     code_visitor.write_out_instructions();
 
+
+    return 1;
 }

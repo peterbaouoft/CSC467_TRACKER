@@ -2,10 +2,7 @@
 
 PARAM __zero__vector__ = {0.0, 0.0, 0.0, 0.0};
 
-TEMP __temp__;
-MOV __temp__, __zero__vector__;
-
 TEMP __a__;
+MOV __a__, __zero__vector__;
 
-__temp__.x
 END

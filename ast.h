@@ -84,6 +84,16 @@ typedef enum
     FUNCTION,
 } ExpressionType;
 
+typedef enum
+{
+    MUL_INSTURCTION,
+    MOV_INSTRUCTION,
+    TEMP_INSTRUCTION,
+    PARAM_INSTRUCTION,
+    DP3_INSTRUCTION,
+    RSQ_INSTRUCTION,
+    LIT_INSTRUCTION,
+} AssemblyInstructionType;
 
 class Visitor
 {
