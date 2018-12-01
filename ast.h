@@ -619,6 +619,45 @@ class BinaryExpression : public UnaryExpression
     ~BinaryExpression() {delete left_expression;}
 };
 
+
+/* Use of Expression visitor to get the type of the expression */
+class ExpressionVisitor : public Visitor
+{
+    private:
+        int expression_instance_type = -1;
+    public:
+        int get_expression_instance_type() const {return expression_instance_type;}
+        void set_expression_instance_type(int type) {expression_instance_type = type;}
+
+        /* Empty visiting statements, as we only need to retrieve the current level type */
+        virtual void visit(Scope *scope) {}
+        virtual void visit(Declaration *decl) {}
+        virtual void visit (Declarations *decls) {}
+        virtual void visit(Type *type) {}
+
+        virtual void visit(Statement *stmt) {}
+        virtual void visit(Statements *stmts) {}
+        virtual void visit(AssignStatement *as_stmt) {}
+        virtual void visit(IfStatement *if_statement) {}
+        virtual void visit(NestedScope *ns) {}
+        virtual void visit(EmptyStatement *es) {}
+
+        virtual void visit(ConstructorExpression *ce) {set_expression_instance_type(CONSTRUCTOR_EXPRESSION);}
+        virtual void visit(FloatLiteralExpression *fle) {set_expression_instance_type(FLOAT_LITERAL);}
+        virtual void visit(BoolLiteralExpression *ble) {set_expression_instance_type(BOOL_EXPRESSION); }
+        virtual void visit(IntLiteralExpression *ile) {set_expression_instance_type(INT_LITERAL);}
+        virtual void visit(UnaryExpression *ue) {}
+        virtual void visit(BinaryExpression *be) {}
+        virtual void visit(VariableExpression *ve) {set_expression_instance_type(VARIABLE);}
+        virtual void visit(FunctionExpression *fe) {set_expression_instance_type(FUNCTION);}
+
+
+        virtual void visit(Function *f) {}
+        virtual void visit(Constructor *c) {}
+
+};
+
+
 node *ast_allocate(NodeKind type, ...);
 void ast_print(node *ast_root);
 void ast_free(node *ast_root);
