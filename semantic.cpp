@@ -8,6 +8,16 @@
 #include <vector>
 #include <sstream>
 
+// std::string create_messages (std::string message, NodeLocation *node_location)
+// {
+//     // va_list vl;
+
+//     // va_start(vl, node_location);
+//     assert(node_location);
+//     buffer << "Missing declaration for symbol " << var->id.c_str();
+//                 buffer << *var->get_node_location();
+
+// }
 int get_type_dimension (const std::string &type){
     if (type == "bvec2" || type == "ivec2" || type == "vec2")
         return 2;
@@ -19,7 +29,8 @@ int get_type_dimension (const std::string &type){
         return 1;
 }
 
-std::string get_base_type (const std::string type){
+std::string get_base_type (const std::string type)
+{
     if (type == "bvec2" || type == "bvec3" || type == "bvec4")
         return "bool";
     else if (type == "vec2" || type == "vec3" || type == "vec4")
@@ -29,17 +40,6 @@ std::string get_base_type (const std::string type){
     else
         return type;
 }
-
-// std::string create_messages (std::string message, NodeLocation *node_location)
-// {
-//     // va_list vl;
-
-//     // va_start(vl, node_location);
-//     assert(node_location);
-//     buffer << "Missing declaration for symbol " << var->id.c_str();
-//                 buffer << *var->get_node_location();
-
-// }
 
 class ErrorMessage
 {

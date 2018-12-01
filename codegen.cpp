@@ -51,7 +51,7 @@ class ARBAssemblyTable
 
             std::string temp_register_name = "temp" + std::to_string(temp_register_counter);
             std::string return_str = insert_register_name_into_map(temp_register_name);
-            assert( return_str != "");
+            assert(return_str != "");
 
             return return_str;
         }
@@ -108,6 +108,15 @@ class ARBAssemblyTable
                 result_str = "MUL " + output_location + ", "  + left_input + ", " + right_input + ";";
                 break;
             }
+
+            case CONST_REGISTER:
+            {
+                std::string const_variable_name = va_arg(args, std::string);
+                std::string right_hand_result = va_arg(args, std::string);
+
+                result_str = "PARAM " + const_variable_name + " = " + right_hand_result + ";";
+                break;
+            }
             }
 
             va_end(args); // End the va_args
@@ -143,8 +152,33 @@ class ARBAssemblyTable
 
                 if (decl->initial_val == nullptr)
                     buffer << create_assembly_instruction(MOV_INSTRUCTION, decl_register_name, zero_vector) << std::endl;
+                else
+                    buffer << create_assembly_instruction(MOV_INSTRUCTION, decl_register_name, \
+                                                        decl->initial_val->get_result_register_name()) << std::endl;
 
                 break;
+            }
+
+            case CONST_DECLARATION_NODE:
+            {
+                Declaration *decl = va_arg(args, Declaration *);
+                int expression_instance_type = va_arg(args, int);
+
+                std::string const_decl_register_name = insert_register_name_into_map(decl->id);
+
+                if (const_decl_register_name == "")
+                    break;
+
+
+                if (decl->initial_val == nullptr)
+                    buffer << create_assembly_instruction(CONST_REGISTER, const_decl_register_name, zero_vector) << std::endl;
+                else {
+                    assert(decl->initial_val->get_result_register_name() != "");
+                    buffer << create_assembly_instruction(CONST_REGISTER, const_decl_register_name, \
+                                                          decl->initial_val->get_result_register_name()) << std::endl;
+                }
+                break;
+
             }
 
             case VECTOR_NODE:
@@ -195,6 +229,37 @@ class ARBAssemblyTable
                 break;
             }
 
+            case CONSTRUCTOR_NODE:
+            {
+                Constructor *constructor = va_arg(args, Constructor*);
+                int num_expression = get_type_dimension(constructor->type->type_name);
+                std::string constructor_expression_type = get_base_type(constructor->type->type_name);
+
+
+                buffer << "{";
+                for (int i = 0; i < num_expression; i++)
+                {
+                    // Cast to each type to access their values
+                    if (constructor_expression_type == "bool") {
+                        BoolLiteralExpression *ble = reinterpret_cast<BoolLiteralExpression *>(constructor->args->get_expression_list()[i]);
+                        buffer << std::to_string(ble->bool_literal);
+                    }
+                    else if(constructor_expression_type == "int"){
+                        IntLiteralExpression *ile = reinterpret_cast<IntLiteralExpression *>(constructor->args->get_expression_list()[i]);
+                        buffer << std::to_string(ile->int_literal);
+                    }
+                    else if (constructor_expression_type == "float"){
+                        FloatLiteralExpression *fle = reinterpret_cast<FloatLiteralExpression *>(constructor->args->get_expression_list()[i]);
+                        buffer << std::to_string(fle->float_literal);
+                    }
+
+                    if (i != num_expression - 1)
+                        buffer << ", ";
+                }
+                buffer << "}";
+                break;
+            }
+
             }
 
             va_end(args);
@@ -234,7 +299,7 @@ class codeGenVisitor : public Visitor
         std::string get_assembly_id_str(IdentifierNode *var){
             var->visit(expr_visitor);
             int variable_type = expr_visitor.get_expression_instance_type();
-            
+
             std::string result_str = "";
             if (variable_type == TEMP_VECTOR_EXPRESSION) {
                 VectorVariable *vector_variable = reinterpret_cast<VectorVariable *>(var);
@@ -254,19 +319,20 @@ class codeGenVisitor : public Visitor
     public:
 
         virtual void visit(Declaration *decl) {
-            std::string decl_instructions = assembly_table.get_assembly_translation(DECLARATION_NODE, decl);
+            // Visit the sub expression to get initial values ready
+            if (decl->initial_val != nullptr) {
+                decl->initial_val->visit(*this);
+            }
+
+            std::string decl_instructions = "";
+            if (decl->get_is_const())
+                decl_instructions = assembly_table.get_assembly_translation(CONST_DECLARATION_NODE, decl);
+            else
+                decl_instructions = assembly_table.get_assembly_translation(DECLARATION_NODE, decl);
             if (decl_instructions == "") // Predefined or error out
                 return;
 
             push_back_instruction(decl_instructions); // Collect the declarations
-
-            if (decl->initial_val != nullptr) {
-                decl->initial_val->visit(*this);
-                // Here, we can treat this as an assign statement, as they share a similar effect
-                std::string init_instruction = assembly_table.get_assembly_translation(ASSIGNMENT_NODE, decl->id, \
-                                                                                        decl->initial_val->get_result_register_name());
-                push_back_instruction(init_instruction);
-            }
         }
 
         virtual void visit(AssignStatement *assign_stmt) {
@@ -334,6 +400,17 @@ class codeGenVisitor : public Visitor
             // Set the result register name so upper layer can see it
             std::string result_str = get_assembly_id_str(ve->id_node);
             ve->set_result_register_name(result_str);
+        }
+
+        virtual void visit(ConstructorExpression *ce) {
+            ce->constructor->visit(*this);
+
+            std::string result_str =  assembly_table.get_assembly_translation(CONSTRUCTOR_NODE, ce->constructor);
+            assert(result_str != "");
+            // Atm, compiler only supports const declared constructors.. i.e vec4(1.0, 2.0, 3.0, 4.0)
+            // where all input are literals
+            ce->set_result_register_name(result_str);
+
         }
 
     public:

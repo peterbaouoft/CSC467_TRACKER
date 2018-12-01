@@ -70,7 +70,9 @@ typedef enum
     FUNCTION_NODE = (1 << 2) | (1 << 9),
     CONSTRUCTOR_NODE = (1 << 2) | (1 << 10),
     ARGUMENTS_NODE = (1 << 2) | (1 << 5),
-    IDENTIFIER_NODE = (1 << 2) | (1 << 6)
+    IDENTIFIER_NODE = (1 << 2) | (1 << 6),
+
+    CONST_DECLARATION_NODE = (1 << 2) | (1 << 19),
 
 } NodeKind;
 
@@ -91,10 +93,10 @@ typedef enum
     MUL_INSTURCTION,
     MOV_INSTRUCTION,
     TEMP_INSTRUCTION,
-    PARAM_INSTRUCTION,
     DP3_INSTRUCTION,
     RSQ_INSTRUCTION,
     LIT_INSTRUCTION,
+    CONST_REGISTER,
 } AssemblyInstructionType;
 
 class Visitor
@@ -675,4 +677,11 @@ class ExpressionVisitor : public Visitor
 node *ast_allocate(NodeKind type, ...);
 void ast_print(node *ast_root);
 void ast_free(node *ast_root);
+
+int get_type_dimension (const std::string &type);
+
+
+std::string get_base_type (const std::string type);
+
+
 #endif /* AST_H_ */
