@@ -1,0 +1,19 @@
+!!ARBfp1.0
+
+TEMP $_temp_;
+TEMP t1;
+TEMP t2;
+TEMP t3;
+TEMP t4;
+MUL t1, fragment.color.x, fragment.position.x;
+MOV t1, $_temp_.x;
+MUL t2, fragment.color.y, fragment.position.y;
+MOV $_temp_.y, t2;
+MOV $_temp_.z, fragment.color.z;
+MUL t3, fragment.color.z, fragment.position.x;
+MUL t4, t3, fragment.position.y;
+MOV $_temp_.w, t4;
+MOV result.color, $_temp_;
+
+END
+
