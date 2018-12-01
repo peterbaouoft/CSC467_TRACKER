@@ -105,7 +105,7 @@ class ARBAssemblyTable
                 std::string left_input = va_arg(args, std::string);
                 std::string right_input = va_arg(args, std::string);
 
-                result_str = "MUL " + output_location + ", "  + left_input + ", " + right_input;
+                result_str = "MUL " + output_location + ", "  + left_input + ", " + right_input + ";";
                 break;
             }
             }
@@ -230,6 +230,27 @@ class codeGenVisitor : public Visitor
             std::string scope_str = assembly_table.get_assembly_translation(SCOPE_NODE);
             push_back_instruction(scope_str);
         }
+
+        std::string get_assembly_id_str(IdentifierNode *var){
+            var->visit(expr_visitor);
+            int variable_type = expr_visitor.get_expression_instance_type();
+            
+            std::string result_str = "";
+            if (variable_type == TEMP_VECTOR_EXPRESSION) {
+                VectorVariable *vector_variable = reinterpret_cast<VectorVariable *>(var);
+                result_str  = assembly_table.get_assembly_translation(VECTOR_NODE, vector_variable);
+            }
+
+            else if(variable_type == TEMP_ID_EXPRESSION) {
+                result_str = assembly_table.get_id_to_name_mapping(var->id);
+            }
+            else{
+                assert(0); // Can not happen
+            }
+            return result_str;
+        }
+
+
     public:
 
         virtual void visit(Declaration *decl) {
@@ -249,7 +270,8 @@ class codeGenVisitor : public Visitor
             assign_stmt->variable->visit(*this);
             assign_stmt->expression->visit(*this);
 
-            std::string assign_stmt_instructions = assembly_table.get_assembly_translation(ASSIGNMENT_NODE, assign_stmt->variable->id, \
+            std::string assembly_variable_str = get_assembly_id_str(assign_stmt->variable);
+            std::string assign_stmt_instructions = assembly_table.get_assembly_translation(ASSIGNMENT_NODE, assembly_variable_str, \
                                                                                             assign_stmt->expression->get_result_register_name());
 
             push_back_instruction(assign_stmt_instructions);
@@ -279,9 +301,8 @@ class codeGenVisitor : public Visitor
             else{
                 if_statement->statement->visit(*this);
                 if (if_statement->else_statement)
-                        if_statement->else_statement->visit(*this);
+                    if_statement->else_statement->visit(*this);
             }
-
         }
 
         virtual void visit(BinaryExpression *be) {
@@ -306,11 +327,9 @@ class codeGenVisitor : public Visitor
         virtual void visit(VariableExpression *ve) {
             ve->id_node->visit(*this);
 
-            ve->id_node->visit(expr_visitor);
-            int variable_type = expr_visitor.get_expression_instance_type();
-
-            if (expression_in)
-
+            // Set the result register name so upper layer can see it
+            std::string result_str = get_assembly_id_str(ve->id_node);
+            ve->set_result_register_name(result_str);
         }
 
     public:
@@ -321,6 +340,9 @@ class codeGenVisitor : public Visitor
                 std::cout << instruction << std::endl;
             }
         }
+
+
+
 };
 
 int genCode(node *ast)
@@ -329,7 +351,6 @@ int genCode(node *ast)
     ast->visit(code_visitor);
     code_visitor.push_back_instruction("END");
     code_visitor.write_out_instructions();
-
 
     return 1;
 }
