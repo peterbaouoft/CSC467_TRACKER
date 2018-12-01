@@ -217,11 +217,15 @@ class Expression : public Node
   private:
     std::string type = "ANY_TYPE";
     bool m_is_const = false;
+    std::string result_register_name = "";
   public:
     virtual std::string get_expression_type() const {return type;}
     virtual void set_expression_type(std::string type_str) {type = type_str;}
     virtual bool get_is_const() const { return m_is_const; }
     void set_is_const( bool is_const) { m_is_const = is_const;}
+
+    virtual std::string get_result_register_name() const {return result_register_name;}
+    virtual void set_result_register_name(std::string register_name) {result_register_name = register_name;}
 
   public:
     virtual ~Expression() {}
@@ -554,6 +558,7 @@ class IntLiteralExpression : public Expression
     };
     virtual bool get_is_const () const {return true; }
 
+    virtual std::string get_result_register_name() const {return std::to_string(int_literal);}
 };
 
 class BoolLiteralExpression : public Expression
@@ -568,6 +573,9 @@ class BoolLiteralExpression : public Expression
     };
 
     virtual bool get_is_const() const {return true;}
+
+    virtual std::string get_result_register_name() const {// Interesting, does this need a name to store it?
+                                                          return std::to_string(bool_literal);}
 };
 
 class FloatLiteralExpression : public Expression
@@ -582,6 +590,7 @@ class FloatLiteralExpression : public Expression
     };
 
     virtual bool get_is_const() const {return true;}
+    virtual std::string get_result_register_name() const {return std::to_string(float_literal);}
 };
 
 class UnaryExpression : public Expression

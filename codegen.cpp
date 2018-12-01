@@ -5,6 +5,7 @@
 #include <iostream>
 #include <vector>
 #include <unordered_map>
+#include "parser.tab.h"
 
 
 class ARBAssemblyTable
@@ -14,6 +15,7 @@ class ARBAssemblyTable
         std::stringstream buffer;
         std::unordered_map<std::string, std::string> m_name_map;
         std::string zero_vector = "__zero__vector__";
+        int temp_register_counter = 0;
 
     public:
         /* Init of assembly table, create name mapping, ARB assembly prefix and so on */
@@ -42,6 +44,16 @@ class ARBAssemblyTable
             std::string created_register_name = "__" + variable_name + "__";
             m_name_map.emplace(variable_name, created_register_name);
             return created_register_name;
+        }
+
+        std::string create_temp_register_name() {
+            temp_register_counter++;
+
+            std::string temp_register_name = "temp" + std::to_string(temp_register_counter);
+            std::string return_str = insert_register_name_into_map(temp_register_name);
+            assert( return_str != "");
+
+            return return_str;
         }
 
     public:
@@ -85,6 +97,16 @@ class ARBAssemblyTable
                 result_str = "TEMP " + register_name + ";";
                 break;
 
+            }
+
+            case MUL_INSTURCTION:
+            {
+                std::string output_location = va_arg(args, std::string);
+                std::string left_input = va_arg(args, std::string);
+                std::string right_input = va_arg(args, std::string);
+
+                result_str = "MUL " + output_location + ", "  + left_input + ", " + right_input;
+                break;
             }
             }
 
@@ -131,6 +153,46 @@ class ARBAssemblyTable
 
                 buffer << get_id_to_name_mapping(vec_var->id);
                 buffer << "." << get_index_to_characater_mapping(vec_var->vector_index);
+                break;
+            }
+
+            case BINARY_EXPRESSION_NODE:
+            {
+                BinaryExpression *be = va_arg(args, BinaryExpression*);
+                int operator_type = va_arg(args, int);
+                std::string left_result_name = va_arg(args, std::string);
+                std::string right_result_name = va_arg(args, std::string);
+
+                // Create a temp register to store the expression result
+                std::string result_register_name = create_temp_register_name();
+                buffer << create_assembly_instruction(TEMP_INSTRUCTION, result_register_name) << std::endl;
+
+                switch (operator_type)
+                {
+                    case TIMES:
+                    {
+                        buffer << create_assembly_instruction(MUL_INSTURCTION, result_register_name, \
+                                                            left_result_name, right_result_name) << std::endl;
+                        break;
+                    }
+                }
+                // Set the result register name for future references
+                be->set_result_register_name(result_register_name);
+                break;
+            }
+
+
+            case ASSIGNMENT_NODE:
+            {
+                // TODO: May be we could recycle all of the used temp register within assign statement(i.e temp1, temp2, temp3 and temp4 etc)
+                std::string variable_name  = va_arg(args, std::string);
+                std::string right_hand_result = va_arg(args, std::string);
+
+                std::string register_name = get_id_to_name_mapping(variable_name);
+                assert(register_name != "");
+
+                buffer << create_assembly_instruction(MOV_INSTRUCTION, register_name, right_hand_result) << std::endl;
+                break;
             }
 
             }
@@ -182,14 +244,16 @@ class codeGenVisitor : public Visitor
                 decl->initial_val->visit(*this);
             }
         }
-        // virtual void visit (Declarations *decls) {}
 
-        // virtual void visit(Statement *stmt) {}
-        // virtual void visit(Statements *stmts) {}
-        virtual void visit(AssignStatement *as_stmt) {
+        virtual void visit(AssignStatement *assign_stmt) {
 
+            assign_stmt->variable->visit(*this);
+            assign_stmt->expression->visit(*this);
 
+            std::string assign_stmt_instructions = assembly_table.get_assembly_translation(ASSIGNMENT_NODE, assign_stmt->variable->id, \
+                                                                                            assign_stmt->expression->get_result_register_name());
 
+            push_back_instruction(assign_stmt_instructions);
         }
 
         virtual void visit(IfStatement *if_statement) {
@@ -219,11 +283,28 @@ class codeGenVisitor : public Visitor
         // virtual void visit(EmptyStatement *es) {}
 
         // virtual void visit(ConstructorExpression *ce) {}
-        // virtual void visit(FloatLiteralExpression *fle) {}
-        // virtual void visit(BoolLiteralExpression *ble) { }
-        // virtual void visit(IntLiteralExpression *ile) {}
-        // virtual void visit(UnaryExpression *ue) {}
-        // virtual void visit(BinaryExpression *be) {}
+
+        virtual void visit(BinaryExpression *be) {
+
+            be->left_expression->visit(*this);
+            be->right_expression->visit(*this);
+
+            // std::cout << "debug messages bin expression \n" << std::endl;
+            // Get the left expression and right expression register name (it can be in memory or just register)
+            std::string left_result_name = be->left_expression->get_result_register_name();
+            std::string right_result_name = be->right_expression->get_result_register_name();
+            assert(left_result_name != "");
+            assert(right_result_name != "");
+
+            int operator_type = be->operator_type;
+
+
+            std::string binary_result_instruction = assembly_table.get_assembly_translation(BINARY_EXPRESSION_NODE, be, operator_type, \
+                                                                                            left_result_name, right_result_name);
+            // std::cout << "Debug the result instruction is " << binary_result_instruction << std::endl;
+            push_back_instruction(binary_result_instruction);
+        }
+
         // virtual void visit(VariableExpression *ve) {}
         // virtual void visit(FunctionExpression *fe) {s}
 
@@ -243,7 +324,6 @@ class codeGenVisitor : public Visitor
                 std::cout << instruction << std::endl;
             }
         }
-
 };
 
 int genCode(node *ast)

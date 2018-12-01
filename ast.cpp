@@ -401,7 +401,6 @@ void Visitor::visit(Statement *statement)
 void Visitor::visit(AssignStatement *assign_stmt)
 {
     assign_stmt->variable->visit(*this);
-    printf(" ");
     assign_stmt->expression->visit(*this);
 }
 

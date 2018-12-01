@@ -1,0 +1,24 @@
+!!ARBfp1.0
+
+PARAM __zero__vector__ = {0.0, 0.0, 0.0, 0.0};
+
+TEMP __a__;
+MOV __a__, __zero__vector__;
+
+TEMP __temp1__;
+MUL __temp1__, 3.000000, 4.000000
+
+MOV __a__, __temp1__;
+
+TEMP __temp2__;
+MUL __temp2__, 4.000000, 5.000000
+
+TEMP __temp3__;
+MUL __temp3__, __temp2__, 6.000000
+
+TEMP __temp4__;
+MUL __temp4__, __temp3__, 7.000000
+
+MOV __a__, __temp4__;
+
+END
