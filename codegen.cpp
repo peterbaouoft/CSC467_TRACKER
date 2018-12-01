@@ -262,6 +262,10 @@ class codeGenVisitor : public Visitor
 
             if (decl->initial_val != nullptr) {
                 decl->initial_val->visit(*this);
+                // Here, we can treat this as an assign statement, as they share a similar effect
+                std::string init_instruction = assembly_table.get_assembly_translation(ASSIGNMENT_NODE, decl->id, \
+                                                                                        decl->initial_val->get_result_register_name());
+                push_back_instruction(init_instruction);
             }
         }
 
