@@ -12,8 +12,8 @@ class ARBAssemblyTable
     private:
 
         std::stringstream buffer;
-        std::unordered_map<std::string, std::string> m_name_map;   
-    
+        std::unordered_map<std::string, std::string> m_name_map;
+
     public:
         /* Init of assembly table, create name mapping, ARB assembly prefix and so on */
         ARBAssemblyTable(){
@@ -34,13 +34,12 @@ class ARBAssemblyTable
             m_name_map.emplace("env3", "program.env[3]");
         }
 
-        void insert_register_name_into_map(const std::string varaible_name){
+        void insert_register_name_into_map(const std::string variable_name){
             if (get_id_to_name_mapping(variable_name) == variable_name)
                 assert(0); // We don't handle if and else statements in our compiler yet
-            
+
             m_name_map.emplace(variable_name, "__" + variable_name + "__");
         }
-
 
     public:
         /* Purely based on the literal meaning, you return the index correspondent to x,y,z,w */
@@ -63,28 +62,28 @@ class ARBAssemblyTable
         }
         std::string get_assembly_translation(NodeKind type, ...){
             va_list args;
-            va_start(args, type);  
-        
+            va_start(args, type);
+
             std::string result_str;
             switch (type)
             {
             case SCOPE_NODE:
             {
                 /* We only want the of ABVfp1.0 to appear once */
-                buffer << "!!ARBfp1.0" << std::endl; 
+                buffer << "!!ARBfp1.0" << std::endl;
                 break;
             }
             case VECTOR_NODE:
             {
                 VectorVariable *vec_var = va_arg(args, VectorVariable*);
-                
-                buffer << get_id_to_name_mapping(vec_var->id); 
+
+                buffer << get_id_to_name_mapping(vec_var->id);
                 buffer << "." << get_index_to_characater_mapping(vec_var->vector_index);
             }
 
             }
             result_str = buffer.str();
-            buffer.str("");    
+            buffer.str("");
             return result_str;
         }
 
@@ -106,16 +105,16 @@ class codeGenVisitor : public Visitor
 {
     private:
         ARBAssemblyTable assembly_table;
-        std::vector<std::string> m_instruction_list; 
+        std::vector<std::string> m_instruction_list;
     public:
         /* Empty visiting statements, as we only need to retrieve the current level type */
-        
+
         virtual void visit(Scope *scope) {
             std::string scope_str = assembly_table.get_assembly_translation(SCOPE_NODE);
             push_back_instruction(scope_str);
             scope->declarations->visit(*this);
             scope->statements->visit(*this);
-        } 
+        }
         // virtual void visit(Declaration *decl) {}
         // virtual void visit (Declarations *decls) {}
 
@@ -140,11 +139,17 @@ class codeGenVisitor : public Visitor
         // virtual void visit(Constructor *c) {}
         virtual void visit(VectorVariable *vv) {
             std::string vector_str = assembly_table.get_assembly_translation(VECTOR_NODE, vv);
-            push_back_instruction(test_string); 
+            push_back_instruction(vector_str);
         }
 
     public:
         void push_back_instruction(std::string instruction) {m_instruction_list.push_back(instruction);}
+
+        void write_out_instructions() {
+            for (std::string instruction : m_instruction_list){
+                std::cout << instruction << std::endl;
+            }
+        }
 
 };
 
@@ -152,5 +157,6 @@ int genCode(node *ast)
 {
     codeGenVisitor code_visitor;
     ast->visit(code_visitor);
+    code_visitor.write_out_instructions();
 
 }

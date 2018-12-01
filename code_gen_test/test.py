@@ -6,25 +6,23 @@ from parameterized import parameterized
 
 parameterized_list = []
 
-for file in glob.glob('semantic_test/*.c'):
+for file_name in glob.glob('./*.c'):
     # run compiler
     p = Popen (
-        ['compiler467', '-Da', file],
+        ['../compiler467', file_name],
         stdout = PIPE,
         stderr = PIPE
         )
     test_output = p.stderr.read() + p.stdout.read()
 
     # test against existed output
-    with open(file + '.out', 'r') as f:
+    with open(file_name + '.out', 'r') as f:
         record_output = f.read()
         f.closed
 
     # put into parameterized list
-    file = file.replace('semantic_test/', '').replace('.c', '')
-    parameterized_list.append ([file, test_output, record_output])
-
-
+    file_name = file_name.replace('./', '').replace('.c', '')
+    parameterized_list.append ([file_name, test_output, record_output])
 
 
 class TestOutput (unittest.TestCase):
