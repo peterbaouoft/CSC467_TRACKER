@@ -161,16 +161,15 @@ class codeGenVisitor : public Visitor
     private:
         ARBAssemblyTable assembly_table;
         std::vector<std::string> m_instruction_list;
-    public:
-        /* Empty visiting statements, as we only need to retrieve the current level type */
+        ExpressionVisitor expr_visitor;
 
-        virtual void visit(Scope *scope) {
+    public:
+        codeGenVisitor(){
             std::string scope_str = assembly_table.get_assembly_translation(SCOPE_NODE);
             push_back_instruction(scope_str);
-            scope->declarations->visit(*this);
-            scope->statements->visit(*this);
-            push_back_instruction("END");
         }
+    public:
+        /* Empty visiting statements, as we only need to retrieve the current level type */
 
         virtual void visit(Declaration *decl) {
             std::string decl_instructions = assembly_table.get_assembly_translation(DECLARATION_NODE, decl);
@@ -183,13 +182,39 @@ class codeGenVisitor : public Visitor
                 decl->initial_val->visit(*this);
             }
         }
-        // virtual void visit(Declaration *decl) {}
         // virtual void visit (Declarations *decls) {}
 
         // virtual void visit(Statement *stmt) {}
         // virtual void visit(Statements *stmts) {}
-        // virtual void visit(AssignStatement *as_stmt) {}
-        // virtual void visit(IfStatement *if_statement) {}
+        virtual void visit(AssignStatement *as_stmt) {
+
+
+
+        }
+
+        virtual void visit(IfStatement *if_statement) {
+            assert(if_statement->expression != nullptr);
+            if_statement->expression->visit(*this);
+            if_statement->expression->visit(expr_visitor);
+
+            bool expression_val = false;
+            int expression_instance_type = expr_visitor.get_expression_instance_type();
+            // We evaluate the expression and if it is true, let's skip the else statement
+            if (expression_instance_type == BOOL_EXPRESSION) {
+                BoolLiteralExpression *ble =  reinterpret_cast<BoolLiteralExpression *>(if_statement->expression);
+                expression_val = ble->bool_literal;
+            }
+
+            // We do deadcode elimination here
+            if (expression_val){
+                if_statement->statement->visit(*this);
+            }
+            else {
+                if (if_statement->else_statement)
+                    if_statement->else_statement->visit(*this);
+            }
+        }
+
         // virtual void visit(NestedScope *ns) {}
         // virtual void visit(EmptyStatement *es) {}
 
@@ -225,6 +250,7 @@ int genCode(node *ast)
 {
     codeGenVisitor code_visitor;
     ast->visit(code_visitor);
+    code_visitor.push_back_instruction("END");
     code_visitor.write_out_instructions();
 
 
