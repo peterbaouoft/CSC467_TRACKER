@@ -8,6 +8,16 @@
 #include <vector>
 #include <sstream>
 
+// std::string create_messages (std::string message, NodeLocation *node_location)
+// {
+//     // va_list vl;
+
+//     // va_start(vl, node_location);
+//     assert(node_location);
+//     buffer << "Missing declaration for symbol " << var->id.c_str();
+//                 buffer << *var->get_node_location();
+
+// }
 int get_type_dimension (const std::string &type){
     if (type == "bvec2" || type == "ivec2" || type == "vec2")
         return 2;
@@ -19,7 +29,8 @@ int get_type_dimension (const std::string &type){
         return 1;
 }
 
-std::string get_base_type (const std::string type){
+std::string get_base_type (const std::string type)
+{
     if (type == "bvec2" || type == "bvec3" || type == "bvec4")
         return "bool";
     else if (type == "vec2" || type == "vec3" || type == "vec4")
@@ -29,17 +40,6 @@ std::string get_base_type (const std::string type){
     else
         return type;
 }
-
-// std::string create_messages (std::string message, NodeLocation *node_location)
-// {
-//     // va_list vl;
-
-//     // va_start(vl, node_location);
-//     assert(node_location);
-//     buffer << "Missing declaration for symbol " << var->id.c_str();
-//                 buffer << *var->get_node_location();
-
-// }
 
 class ErrorMessage
 {
@@ -61,12 +61,13 @@ class ErrorHandler
     public:
         bool load_source_file(); // We want to load the input file for meaningful message output
         void print_out_errors(){
+            errorOccurred = ((int)m_error_list.size() > 0) ? 1 : 0;
             int error_num = 1;
             for (ErrorMessage *err_message : m_error_list)
             {
-                printf("------------------------------------------------------------------------------------------------\n");
-                printf("Error %d: %s\n", error_num, err_message->get_error_message().c_str());
-                printf("------------------------------------------------------------------------------------------------\n");
+                fprintf(errorFile, "------------------------------------------------------------------------------------------------\n");
+                fprintf(errorFile, "Error %d: %s\n", error_num, err_message->get_error_message().c_str());
+                fprintf(errorFile, "------------------------------------------------------------------------------------------------\n");
                 error_num++;
             }
 
@@ -118,6 +119,7 @@ class SymbolVisitor : public Visitor
                 ErrorMessage *err_msg = new ErrorMessage(buffer.str(), temp->get_node_location());
                 error_handler->push_back_error_message(err_msg);
                 buffer.str(""); // Clear out the buffer
+                decl->type = new Type("ANY_TYPE");
             }
         }
 
@@ -130,6 +132,7 @@ class SymbolVisitor : public Visitor
                 buffer << " " << *var->get_node_location();
                 error_handler->push_back_error_message(new ErrorMessage(buffer.str(), var->get_node_location()));
                 buffer.str(""); // Clear out the buffer;
+                var->set_id_type(new Type("ANY_TYPE"));
             }
             else {
                 var->set_declaration(declaration);
@@ -146,47 +149,12 @@ class SymbolVisitor : public Visitor
                 buffer << " " << *vec_var->get_node_location();
                 error_handler->push_back_error_message(new ErrorMessage(buffer.str(), vec_var->get_node_location()));
                 buffer.str("");
+                vec_var->set_id_type(new Type("ANY_TYPE"));
             }
             else {
                 vec_var->set_declaration(declaration);
             }
         }
-};
-
-class ExpressionVisitor : public Visitor
-{
-    private:
-        int expression_instance_type = -1;
-    public:
-        int get_expression_instance_type() const {return expression_instance_type;}
-        void set_expression_instance_type(int type) {expression_instance_type = type;}
-
-        /* Empty visiting statements, as we only need to retrieve the current level type */
-        virtual void visit(Scope *scope) {}
-        virtual void visit(Declaration *decl) {}
-        virtual void visit (Declarations *decls) {}
-        virtual void visit(Type *type) {}
-
-        virtual void visit(Statement *stmt) {}
-        virtual void visit(Statements *stmts) {}
-        virtual void visit(AssignStatement *as_stmt) {}
-        virtual void visit(IfStatement *if_statement) {}
-        virtual void visit(NestedScope *ns) {}
-        virtual void visit(EmptyStatement *es) {}
-
-        virtual void visit(ConstructorExpression *ce) {set_expression_instance_type(CONSTRUCTOR_EXPRESSION);}
-        virtual void visit(FloatLiteralExpression *fle) {set_expression_instance_type(FLOAT_LITERAL);}
-        virtual void visit(BoolLiteralExpression *ble) {set_expression_instance_type(BOOL_EXPRESSION); }
-        virtual void visit(IntLiteralExpression *ile) {set_expression_instance_type(INT_LITERAL);}
-        virtual void visit(UnaryExpression *ue) {}
-        virtual void visit(BinaryExpression *be) {}
-        virtual void visit(VariableExpression *ve) {set_expression_instance_type(VARIABLE);}
-        virtual void visit(FunctionExpression *fe) {set_expression_instance_type(FUNCTION);}
-
-
-        virtual void visit(Function *f) {}
-        virtual void visit(Constructor *c) {}
-
 };
 
 class PostOrderVisitor : public Visitor
@@ -211,11 +179,25 @@ class PostOrderVisitor : public Visitor
     public:
 
         virtual void visit(Declaration *decl){
-            if (decl->initial_val == nullptr) /* We don't need to check for no initalized declarations */
+            if (decl->type == nullptr || decl->type->type_name == "ANY_TYPE") /* Any type means an error in symbol table anslysis, and we return it */
+                return;
+
+            if (decl->initial_val == nullptr)  /* We don't need to check for no initalized declarations */
                 return;
 
             /* First do a type inference */
             decl->initial_val->visit(*this);
+
+            if (decl->initial_val->get_expression_type() == "ANY_TYPE")
+                return;
+            
+            if (decl->type->type_name != decl->initial_val->get_expression_type()) /* Declaration type mismatch */
+            {
+                std::string message  = "Type mismatch for this declaration, the LHS variable " + decl->id +
+                                        " expected a " + decl->type->type_name + " type but got a " + decl->initial_val->get_expression_type() + " type\n\t ";
+                push_message_into_handler(message, decl->get_node_location());
+                /* decl->type->type_name = "ANY_TYPE"; */ /* Since an error occurred, let's set it to error type .. */
+            }
 
             /* Then we want to get its correspondent expression type */
             decl->initial_val->visit(expression_visitor);
@@ -240,18 +222,25 @@ class PostOrderVisitor : public Visitor
                         is_valid = false;
                 }
 
+                else if (expression_instance_type ==  CONSTRUCTOR_EXPRESSION)
+                {
+                    if (!decl->initial_val->get_is_const())
+                        is_valid = false;
+                    else
+                        is_valid = true;
+                }
+
                 /* Push error messages into handler */
                 if(!is_valid) {
-                    assert(decl->get_node_location());
                     std::string message = "const qualified variable " + decl->id + " must be initalized with a literal value or"
-                                          " a uniform variable, not an expression ";
+                                          " a uniform variable, or a const constructor expression ";
                     push_message_into_handler(message, decl->get_node_location());
                 }
             }
         }
 
         virtual void visit(VectorVariable *vv){
-            if (vv->get_id_type() == nullptr)
+            if (vv->get_id_type() == nullptr || vv->get_id_type()->type_name == "ANY_TYPE")
                 return; /* We already reported errors on symbol table creation */
             std::string type_name = vv->get_id_type()->type_name;
 
@@ -269,7 +258,7 @@ class PostOrderVisitor : public Visitor
                 error_handler->push_back_error_message(new ErrorMessage(buffer.str(), vv->get_node_location()));
                 buffer.str("");
 
-                vv->set_id_type(nullptr); /* Since it is not valid */
+                vv->set_id_type(new Type("ANY_TYPE")); /* Since it is not valid, it is ok.. to leak a little i guess :) */
                 return;
             }
             std::string base_type = get_base_type(type_name);
@@ -282,9 +271,9 @@ class PostOrderVisitor : public Visitor
             std::string base_type = get_base_type (ce->constructor->type->type_name);
             std::vector<Expression *> expression_list = ce->constructor->args->get_expression_list();
             int type_dimension = get_type_dimension (type);
-
             int num_of_expressions = (int)expression_list.size();
 
+            bool is_const_constructor = true;
             // check dimension
             if (type_dimension != num_of_expressions){
                 /* Push error messages into handler */
@@ -303,6 +292,8 @@ class PostOrderVisitor : public Visitor
                     buffer << "argument type (" << arg_type << ")  and constructor type (" << base_type << ") mismatch ";
                     buffer << " " << *expr->get_node_location() << "\n\t ";
                 }
+                if (!expr->get_is_const())
+                    is_const_constructor = false;
             }
 
             /* Push error messages into handler */
@@ -311,7 +302,8 @@ class PostOrderVisitor : public Visitor
                 push_message_into_handler(message, ce->get_node_location());
                 return;
             }
-
+            if (is_const_constructor) /* This means constructor itself is a constant constructor expression */
+                ce->set_is_const(true);
             ce->set_expression_type(type);
         }
 
@@ -321,47 +313,53 @@ class PostOrderVisitor : public Visitor
             std::string function_name = fe->function->function_name;
             std::vector<Expression *> args = fe->function->arguments->get_expression_list();
 
+            int args_size = (int)args.size();
+
             if (function_name == "rsq"){
-                if (args.size() != 1){
-                    printf("\nError: rsq function has %d argument (only 1 allowed)\n", (int)args.size());
+                if (args_size != 1){
+                    std::string message = "rsq function has " + std::to_string(args_size) + " argument (only 1 allowed) ";
+                    push_message_into_handler(message, fe->get_node_location());
                     return;
                 }
-                for(int i=0; i<(int)args.size(); i++){
-                    std::string type = args[i]->get_expression_type();
-                    if (type != "int" || type != "float"){
-                        printf("Error: rsq function has %s type as argument (only int/float allowed)\n", type.c_str());
-                        return;
-                    }
+                std::string type = args[0]->get_expression_type();
+                if (!(type == "int" || type == "float")){
+                    std::string message = "rsq function has " + type + " type as argument (only int/float allowed) ";
+                    push_message_into_handler(message, fe->get_node_location());
+                    return;
                 }
+
                 fe->set_expression_type("float");
             }
             if (function_name == "dp3"){
-                if (args.size() != 2){
-                    printf("\nError: rsq function has %d argument (only 2 allowed)\n", (int)args.size());
+                if (args_size != 2){
+                    std::string message = "dp3 function has " + std::to_string(args_size) + " argument (only 2 allowed)";
+                    push_message_into_handler(message, fe->get_node_location());
                     return;
                 }
                 std::string type_1 = args[0]->get_expression_type();
                 std::string type_2 = args[1]->get_expression_type();
-                if ((type_1 != "vec3" && type_2 != "vec3") ||
-                    (type_1 != "vec4" && type_2 != "vec4") ||
-                    (type_1 != "ivec3" && type_2 != "ivec3") ||
-                    (type_1 != "ivec4" && type_2 != "ivec4"))
+                if (!  ((type_1 == "vec3" && type_2 == "vec3") ||
+                        (type_1 == "vec4" && type_2 == "vec4") ||
+                        (type_1 == "ivec3" && type_2 == "ivec3") ||
+                        (type_1 == "ivec4" && type_2 == "ivec4")))
                 {
-                    printf ("Error: dp3 function has %s, %s type as arguments (both args must be vec3/vec4/ivec3/ivec4)",
-                            type_1.c_str(), type_2.c_str());
+                    std::string message =  "dp3 function has " + type_1 + ", " + type_2 + " type as arguments (both args must be vec3/vec4/ivec3/ivec4) ";
+                    push_message_into_handler(message, fe->get_node_location());
                     return;
                 }
                 fe->set_expression_type("float");
             }
             if (function_name == "lit"){
-                if (args.size() != 1){
-                    printf("\nError: lit function has %d argument (only 1 allowed)\n", (int)args.size());
+                if (args_size != 1){
+                    std::string message = "lit function has " + std::to_string(args_size) +  "argument (only 1 allowed) ";
+                    push_message_into_handler(message, fe->get_node_location());
                     return;
                 }
                 for(int i=0; i<(int)args.size(); i++){
                     std::string type = args[i]->get_expression_type();
                     if (type != "vec4"){
-                        printf("Error: lit function has %s type as argument (only vec4 allowed)\n", type.c_str());
+                        std::string message = "lit function has " + type + " type as argument (only vec4 allowed) ";
+                        push_message_into_handler(message, fe->get_node_location());
                         return;
                     }
                 }
@@ -391,19 +389,22 @@ class PostOrderVisitor : public Visitor
             /* Do Operator checking */
             int operator_type = ue->operator_type;
             std::string base_type = get_base_type(type);
+            std::string message;
             switch (operator_type) {
                 case NOT:
                 {
                     if (base_type !=  "bool") {
-                        printf("Error: Logical operators only work for boolean types\n");
-                        type = "ANY_TYPE"; /* for upper error handling */
+                        message = "Logical operators only work for boolean types ";
+                        push_message_into_handler(message, ue->get_node_location());
+                        type = "ANY_TYPE";
                     }
                     break;
                 }
                 case MINUS:
                 {
                     if (base_type == "bool") {
-                        printf("Error: Arithmatic operators only work for operator types\n");
+                        message = "Arithmatic operators only work for operator types";
+                        push_message_into_handler(message, ue->get_node_location());
                         type = "ANY_TYPE";
                     }
                     break;
@@ -419,9 +420,8 @@ class PostOrderVisitor : public Visitor
 
             std::string lhs_expr_type = be->left_expression->get_expression_type();
             std::string rhs_expr_type = be->right_expression->get_expression_type();
+            std::string message;
 
-            // printf("LHS type is %s\n", lhs_expr_type.c_str());
-            // printf("RHS type is %s\n", rhs_expr_type.c_str());
 
             /* goes back to the caller, with any type as default */
             if (lhs_expr_type == "ANY_TYPE" || rhs_expr_type == "ANY_TYPE")
@@ -430,7 +430,9 @@ class PostOrderVisitor : public Visitor
             std::string lhs_base_type = get_base_type(lhs_expr_type);
             std::string rhs_base_type = get_base_type(rhs_expr_type);
             if (lhs_base_type != rhs_base_type){
-                printf("Both operands of a binary operator must have exactly same base type\n"); /*TODO, put line number */
+                std::string message = "Both operands of a binary operator must have exactly same base type, LHS base type is " + lhs_base_type +
+                                     " and RHS base type is " + rhs_base_type + " ";
+                push_message_into_handler(message, be->get_node_location());
                 return;
             }
 
@@ -439,7 +441,7 @@ class PostOrderVisitor : public Visitor
             int rhs_vec_dimen = get_type_dimension(rhs_expr_type);
 
             /* Declare flag variables here which will be used in the follwoing */
-            bool is_arithmetic = lhs_base_type !="bool";
+            bool is_arithmetic = (lhs_base_type !="bool" && rhs_base_type !="bool");
             bool is_logical = !is_arithmetic;
             bool matching_dimen = lhs_vec_dimen == rhs_vec_dimen;
             bool is_lhs_scalar = lhs_vec_dimen == 1;
@@ -450,11 +452,13 @@ class PostOrderVisitor : public Visitor
 
             if (operator_type == AND || operator_type == OR){ /* Early returns */
                 if (is_arithmetic)  {
-                    printf("Logical operators only work for boolean types\n");
+                    message = " Logical operators only work for boolean types";
+                    push_message_into_handler(message, be->get_node_location());
                     return;
                 }
                 if (!matching_dimen) {
-                    printf("The expression dimension mismatches, one is %d, and the other is %d", lhs_vec_dimen, rhs_vec_dimen);
+                    message = "The expression dimension mismatches, one(lhs) is" + std::to_string(lhs_vec_dimen) + ",  and the other is " + std::to_string(rhs_vec_dimen);
+                    push_message_into_handler(message, be->get_node_location());
                     return;
                 }
                 ret_type = lhs_expr_type; /* Either left or right expression is a match */
@@ -463,18 +467,19 @@ class PostOrderVisitor : public Visitor
             }
 
             if (is_logical) {
-                printf("Arithmetic operators only work for arithmetic types\n");
+                message = "Arithmetic operators only work for arithmetic types ";
+                push_message_into_handler(message, be->get_node_location());
                 return;
             }
 
             /* Plus and minus, we have ss and vv */
             if (operator_type == PLUS || operator_type == MINUS) {
                 if (!matching_dimen) {
-                    printf("The expression dimension mismatches, one is %d, and the other is %d\n", lhs_vec_dimen, rhs_vec_dimen);
+                    message = "The expression dimension mismatches, one(lhs) is " + std::to_string(lhs_vec_dimen) + ",  and the other is " + std::to_string(rhs_vec_dimen) + " ";
+                    push_message_into_handler(message, be->get_node_location());
                     return;
                 }
-                printf("WOT, the LHS vec dimension is %d\n", lhs_vec_dimen);
-                ret_type = lhs_vec_dimen; /* LHS DIM = RHS DIM and both scalars and vectors work */
+                ret_type = lhs_expr_type; /* LHS DIM = RHS DIM and both scalars and vectors work */
             }
 
             else if (operator_type == TIMES) {
@@ -486,7 +491,8 @@ class PostOrderVisitor : public Visitor
                    ret_type = lhs_expr_type;
                 else { /* vv => v */
                     if (!matching_dimen) {
-                        printf("The expression dimension mismatches, one is %d, and the other is %d", lhs_vec_dimen, rhs_vec_dimen);
+                        message = "The expression dimension mismatches, one(lhs) is " + std::to_string(lhs_vec_dimen) + ",  and the other is " + std::to_string(rhs_vec_dimen) + " ";
+                        push_message_into_handler(message, be->get_node_location());
                         return;
                     }
                     ret_type = lhs_expr_type; /* Both lhs and rhs works */
@@ -495,7 +501,8 @@ class PostOrderVisitor : public Visitor
 
             else if (operator_type == CARET || operator_type == DIVIDE) {
                 if (!is_lhs_scalar || !is_rhs_scalar) {
-                    printf("Divide and Caret operator only works on scalars \n"); /* Set line number */
+                    message = "Divide and Caret operator only works on scalars ";
+                    push_message_into_handler(message, be->get_node_location());
                     return;
                }
                 ret_type = lhs_expr_type;
@@ -505,7 +512,9 @@ class PostOrderVisitor : public Visitor
                      || operator_type == G_EQ)
             {
                 if (!is_lhs_scalar || !is_rhs_scalar) {
-                    printf(" <, <=, >, >= operators only works on scalars \n"); /* Set line number */
+
+                    message= "<, <=, >, >= operators only works on scalars ";
+                    push_message_into_handler(message, be->get_node_location());
                     return;
                }
 
@@ -515,14 +524,16 @@ class PostOrderVisitor : public Visitor
             else if (operator_type == DOUBLE_EQ || operator_type == N_EQ)
             {
                 if (!matching_dimen) {
-                    printf("The expression dimension mismatches, one is %d, and the other is %d", lhs_vec_dimen, rhs_vec_dimen);
+                    message = "The expression dimension mismatches, one(lhs) is " + std::to_string(lhs_vec_dimen) + ",  and the other is " + std::to_string(rhs_vec_dimen) + " ";
+                    push_message_into_handler(message, be->get_node_location());
                     return;
                 }
                 ret_type = "bool";
             }
 
             else {
-                printf("Unknown binary operator type\n");
+                message = "Unknown binary operator type ";
+                push_message_into_handler(message, be->get_node_location());
                 return;
             }
 
@@ -543,10 +554,12 @@ class PostOrderVisitor : public Visitor
 
             Type *variable_type = ve->id_node->get_id_type(); /* Note: due to the nature of parser, id_node exists by default */
             if (variable_type != nullptr){
-                // std::string base_type = get_base_type(ve->id_node->get_id_type()->type_name);
                 ve->set_expression_type(variable_type->type_name);
+                if (declaration && declaration->get_is_const ()) /* We only handle the trivial case for variable, whether the declaration is const or not */
+                   ve->set_is_const(true);
             }
         }
+
         virtual void visit(AssignStatement *assign_stmt){
             /* Visit the members to set the inference types */
             assign_stmt->variable->visit(*this);
@@ -560,7 +573,7 @@ class PostOrderVisitor : public Visitor
                 return;
 
             if (rhs_type != lhs_type) {
-                std::string message = "Can not assign a different type expression to a variable, Expected: " + lhs_type + " But got: " + rhs_type;
+                std::string message = "Can not assign a different type expression to a variable, Expected: " + lhs_type + " But got: " + rhs_type + " ";
                 push_message_into_handler(message, assign_stmt->get_node_location());
                 return;
             }
@@ -572,21 +585,21 @@ class PostOrderVisitor : public Visitor
                     std::string message;
                     if (variable_declaration->get_is_const()) {
                         if (variable_declaration->get_node_location()) {// Means it is a normal defined constant variable
+                            assert(assign_stmt->get_node_location());
                             buffer << "const qualified variable " << variable_declaration->id << " can not be re-assigned, ";
                             buffer << "Its declaration is " << *variable_declaration->get_node_location() << "\n\t ";
-                            buffer << "The Assign Statament is " << assign_stmt->get_node_location();
+                            buffer << "The Assign Statament is " << *assign_stmt->get_node_location();
                             error_handler->push_back_error_message(new ErrorMessage(buffer.str(), assign_stmt->get_node_location()));
                             buffer.str("");
-
                             return;
                         }
                         else
                             message = "Uniform type classes Variable " + assign_stmt->variable->id + " is const qualified, and can not be re-assigned ";
                     }
                     else if(variable_declaration->get_is_read_only())
-                        message = "Can not assign to a read only variable " + variable_declaration->id;
+                        message = "Can not assign to a read only variable " + variable_declaration->id + " ";
                     else if(if_else_scope_counter != 0 && variable_declaration->get_is_write_only())
-                        message = "Variable " + variable_declaration->id + " with Result type classes can not be assigned anywhere in the scope of an if or else statement";
+                        message = "Variable " + variable_declaration->id + " with Result type classes can not be assigned anywhere in the scope of an if or else statement ";
 
                     if (message != "")
                         push_message_into_handler(message, assign_stmt->get_node_location());

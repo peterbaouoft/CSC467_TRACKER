@@ -70,7 +70,9 @@ typedef enum
     FUNCTION_NODE = (1 << 2) | (1 << 9),
     CONSTRUCTOR_NODE = (1 << 2) | (1 << 10),
     ARGUMENTS_NODE = (1 << 2) | (1 << 5),
-    IDENTIFIER_NODE = (1 << 2) | (1 << 6)
+    IDENTIFIER_NODE = (1 << 2) | (1 << 6),
+
+    CONST_DECLARATION_NODE = (1 << 2) | (1 << 19),
 
 } NodeKind;
 
@@ -82,7 +84,21 @@ typedef enum
     CONSTRUCTOR_EXPRESSION,
     VARIABLE,
     FUNCTION,
+    TEMP_ID_EXPRESSION,
+    TEMP_VECTOR_EXPRESSION,
 } ExpressionType;
+
+typedef enum
+{
+    MUL_INSTURCTION,
+    MOV_INSTRUCTION,
+    ADD_INSTRUCTION,
+    TEMP_INSTRUCTION,
+    DP3_INSTRUCTION,
+    RSQ_INSTRUCTION,
+    LIT_INSTRUCTION,
+    CONST_REGISTER,
+} AssemblyInstructionType;
 
 class Visitor
 {
@@ -205,9 +221,16 @@ class Expression : public Node
 {
   private:
     std::string type = "ANY_TYPE";
+    bool m_is_const = false;
+    std::string result_register_name = "";
   public:
     virtual std::string get_expression_type() const {return type;}
     virtual void set_expression_type(std::string type_str) {type = type_str;}
+    virtual bool get_is_const() const { return m_is_const; }
+    void set_is_const( bool is_const) { m_is_const = is_const;}
+
+    virtual std::string get_result_register_name() const {return result_register_name;}
+    virtual void set_result_register_name(std::string register_name) {result_register_name = register_name;}
 
   public:
     virtual ~Expression() {}
@@ -538,6 +561,9 @@ class IntLiteralExpression : public Expression
     {
         visitor.visit(this);
     };
+    virtual bool get_is_const () const {return true; }
+
+    virtual std::string get_result_register_name() const {return std::to_string(int_literal);}
 };
 
 class BoolLiteralExpression : public Expression
@@ -550,6 +576,11 @@ class BoolLiteralExpression : public Expression
     {
         visitor.visit(this);
     };
+
+    virtual bool get_is_const() const {return true;}
+
+    virtual std::string get_result_register_name() const {// Interesting, does this need a name to store it?
+                                                          return std::to_string(bool_literal);}
 };
 
 class FloatLiteralExpression : public Expression
@@ -562,6 +593,9 @@ class FloatLiteralExpression : public Expression
     {
         visitor.visit(this);
     };
+
+    virtual bool get_is_const() const {return true;}
+    virtual std::string get_result_register_name() const {return std::to_string(float_literal);}
 };
 
 class UnaryExpression : public Expression
@@ -599,7 +633,56 @@ class BinaryExpression : public UnaryExpression
     ~BinaryExpression() {delete left_expression;}
 };
 
+
+/* Use of Expression visitor to get the type of the expression */
+class ExpressionVisitor : public Visitor
+{
+    private:
+        int expression_instance_type = -1;
+    public:
+        int get_expression_instance_type() const {return expression_instance_type;}
+        void set_expression_instance_type(int type) {expression_instance_type = type;}
+
+        /* Empty visiting statements, as we only need to retrieve the current level type */
+        virtual void visit(Scope *scope) {}
+        virtual void visit(Declaration *decl) {}
+        virtual void visit (Declarations *decls) {}
+        virtual void visit(Type *type) {}
+
+        virtual void visit(Statement *stmt) {}
+        virtual void visit(Statements *stmts) {}
+        virtual void visit(AssignStatement *as_stmt) {}
+        virtual void visit(IfStatement *if_statement) {}
+        virtual void visit(NestedScope *ns) {}
+        virtual void visit(EmptyStatement *es) {}
+
+        virtual void visit(ConstructorExpression *ce) {set_expression_instance_type(CONSTRUCTOR_EXPRESSION);}
+        virtual void visit(FloatLiteralExpression *fle) {set_expression_instance_type(FLOAT_LITERAL);}
+        virtual void visit(BoolLiteralExpression *ble) {set_expression_instance_type(BOOL_EXPRESSION); }
+        virtual void visit(IntLiteralExpression *ile) {set_expression_instance_type(INT_LITERAL);}
+        virtual void visit(UnaryExpression *ue) {}
+        virtual void visit(BinaryExpression *be) {}
+        virtual void visit(VariableExpression *ve) {set_expression_instance_type(VARIABLE);}
+        virtual void visit(FunctionExpression *fe) {set_expression_instance_type(FUNCTION);}
+
+
+        virtual void visit(Function *f) {}
+        virtual void visit(Constructor *c) {}
+
+        virtual void visit(IdentifierNode *var) {set_expression_instance_type(TEMP_ID_EXPRESSION);}
+        virtual void visit(VectorVariable *vec_var) {set_expression_instance_type(TEMP_VECTOR_EXPRESSION);}
+
+};
+
+
 node *ast_allocate(NodeKind type, ...);
 void ast_print(node *ast_root);
 void ast_free(node *ast_root);
+
+int get_type_dimension (const std::string &type);
+
+
+std::string get_base_type (const std::string type);
+
+
 #endif /* AST_H_ */

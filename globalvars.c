@@ -1,4 +1,6 @@
 /***********************************************************************
+ * **YOUR GROUP INFO SHOULD GO HERE**
+ *
  * globalvars.c
  *
  * CSC467 Project Compiler Shared Global Variables

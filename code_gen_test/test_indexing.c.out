@@ -1,0 +1,11 @@
+!!ARBfp1.0
+
+PARAM __zero__vector__ = {0.0, 0.0, 0.0, 0.0};
+
+TEMP __temp__;
+MOV __temp__, __zero__vector__;
+
+TEMP __a__;
+
+__temp__.x
+END

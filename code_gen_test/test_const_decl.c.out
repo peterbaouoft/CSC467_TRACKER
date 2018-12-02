@@ -1,0 +1,11 @@
+!!ARBfp1.0
+
+PARAM __zero__vector__ = {0.0, 0.0, 0.0, 0.0};
+
+PARAM __a__ = {0.000000, 0.100000, 0.200000, 0.300000};
+
+PARAM __lHalf__ = state.light[0].half;
+
+PARAM __lVec__ = program.env[1];
+
+END

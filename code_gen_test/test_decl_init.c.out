@@ -1,0 +1,13 @@
+!!ARBfp1.0
+
+PARAM __zero__vector__ = {0.0, 0.0, 0.0, 0.0};
+
+TEMP __fCol__;
+
+MOV __fCol__, fragment.color;
+
+TEMP __fTex__;
+
+MOV __fTex__, fragment.texcoord;
+
+END

@@ -1,0 +1,25 @@
+!!ARBfp1.0
+
+TEMP $_temp_;
+PARAM zero = {0.0, 0.0, 0.0, 0.0};
+TEMP t1;
+MOV t1, zero;
+TEMP t2;
+MOV t2, zero;
+TEMP t3;
+MOV t3, zero;
+TEMP t4;
+MOV t4, zero;
+
+MUL t1, fragment.color.x, fragment.position.x;
+MOV $_temp_.x, t1;
+MUL t2, fragment.color.y, fragment.position.y;
+MOV $_temp_.y, t2;
+MOV $_temp_.z, fragment.color.z;
+MUL t3, fragment.color.z, fragment.position.x;
+MUL t4, t3, fragment.position.y;
+MOV $_temp_.w, t4;
+MOV result.color, $_temp_;
+
+END
+

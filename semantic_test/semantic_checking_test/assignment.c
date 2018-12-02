@@ -3,7 +3,7 @@
     float b;
     ivec3 c;
 
-    a = c;
+    a = c[0];
 
     b = a;
 

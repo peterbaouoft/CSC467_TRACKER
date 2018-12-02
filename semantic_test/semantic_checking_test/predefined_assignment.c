@@ -10,4 +10,5 @@
     else 
         gl_FragDepth = false;
     gl_FragColor = test;
+    gl_FragColor = 1;
 }
