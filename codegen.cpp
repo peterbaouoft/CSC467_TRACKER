@@ -146,6 +146,16 @@ class ARBAssemblyTable
                 break;
             }
 
+
+            case ADD_INSTRUCTION:
+            {
+                std::string output_location = va_arg(args, std::string);
+                std::string left_input = va_arg(args, std::string);
+                std::string right_input = va_arg(args, std::string);
+
+                result_str = "ADD " + output_location + ", " + left_input + ", " + right_input + ";";
+                break;
+            }
             }
 
             va_end(args); // End the va_args
@@ -238,6 +248,13 @@ class ARBAssemblyTable
                                                             left_result_name, right_result_name) << std::endl;
                         break;
                     }
+
+                    case PLUS:
+                    {
+                        buffer << create_assembly_instruction(ADD_INSTRUCTION, result_register_name, \
+                                                            left_result_name, right_result_name) << std::endl;
+                        break;
+                    }
                 }
                 // Set the result register name for future references
                 be->set_result_register_name(result_register_name);
@@ -294,7 +311,7 @@ class ARBAssemblyTable
                 FunctionExpression * fe = va_arg(args, FunctionExpression*);
 
                 std::string function_name = va_arg(args, std::string);
-                
+
                 // Create a temp register to store the expression result
                 std::string result_register_name = create_temp_register_name();
                 buffer << create_assembly_instruction(TEMP_INSTRUCTION, result_register_name) << std::endl;
@@ -312,7 +329,7 @@ class ARBAssemblyTable
                     std::string input_result_name = va_arg(args, std::string);
                     buffer << create_assembly_instruction(LIT_INSTRUCTION, result_register_name, input_result_name) << std::endl;
                 }
-                        
+
                 // Set the result register name for future references
                 fe->set_result_register_name(result_register_name);
                 break;
@@ -494,7 +511,7 @@ class codeGenVisitor : public Visitor
                 std::string input_result_name = args_list[0]->get_result_register_name();
                 function_result_instruction = assembly_table.get_assembly_translation(FUNCTION_NODE, fe, function_name, input_result_name);
             }
-            
+
             push_back_instruction(function_result_instruction);
         }
 
