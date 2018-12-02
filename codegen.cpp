@@ -117,6 +117,26 @@ class ARBAssemblyTable
                 result_str = "PARAM " + const_variable_name + " = " + right_hand_result + ";";
                 break;
             }
+
+            case DP3_INSTRUCTION:
+            {
+                std::string output_location = va_arg(args, std::string);
+                std::string left_input = va_arg(args, std::string);
+                std::string right_input = va_arg(args, std::string);
+
+                result_str = "DP3 " + output_location + ", "  + left_input + ", " + right_input + ";";
+                break;
+            }
+
+            case RSQ_INSTRUCTION:
+            {
+                std::string output_location = va_arg(args, std::string);
+                std::string input = va_arg(args, std::string);
+
+                result_str = "RSQ " + output_location + ", "  + input;
+                break;
+            }
+
             }
 
             va_end(args); // End the va_args
@@ -258,6 +278,41 @@ class ARBAssemblyTable
                 }
                 buffer << "}";
                 break;
+            }
+
+            case FUNCTION_NODE:
+            {
+                FunctionExpression * fe = va_arg(args, FunctionExpression*);
+
+                std::string function_name = fe->function->function_name;
+
+                // Create a temp register to store the expression result
+                std::string result_register_name = create_temp_register_name();
+                buffer << create_assembly_instruction(TEMP_INSTRUCTION, result_register_name) << std::endl;
+
+                std::vector<Expression *> args_list = fe->function->arguments->get_expression_list();
+
+                if (fe->function->function_name == "dp3")
+                {
+                    std::string left_result_name = args_list[0]->get_result_register_name();
+                    std::string right_result_name = args_list[1]->get_result_register_name();
+                    buffer << create_assembly_instruction(DP3_INSTRUCTION, result_register_name, left_result_name, right_result_name) << std::endl;
+                }else if (fe->function->function_name == "rsq")
+                {
+                    std::string input_result_name = args_list[0]->get_result_register_name();
+                    buffer << create_assembly_instruction(RSQ_INSTRUCTION, result_register_name, input_result_name) << std::endl;
+                }
+                        
+                // Set the result register name for future references
+                fe->set_result_register_name(result_register_name);
+                break;
+            }
+
+            case ARGUMENTS_NODE:
+            {
+                Arguments* arguments = va_arg(args, Arguments*);
+
+
             }
 
             }
@@ -411,6 +466,18 @@ class codeGenVisitor : public Visitor
             // where all input are literals
             ce->set_result_register_name(result_str);
 
+        }
+
+        virtual void visit(FunctionExpression *fe){
+            fe->function->visit(*this);
+            fe->function->arguments->visit(*this);
+            std::vector<Expression *> args = fe->function->arguments->get_expression_list();
+            for (int i=0; i<(int)args.size(); i++){
+                args[i]->visit(*this);
+            }
+
+            std::string function_result_instruction = assembly_table.get_assembly_translation(FUNCTION_NODE, fe);
+            push_back_instruction(function_result_instruction);
         }
 
     public:
