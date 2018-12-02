@@ -5,6 +5,9 @@ PARAM __zero__vector__ = {0.0, 0.0, 0.0, 0.0};
 TEMP __eyeNorm__;
 MOV __eyeNorm__, __zero__vector__;
 
+TEMP __coeff__;
+MOV __coeff__, __zero__vector__;
+
 MOV __eyeNorm__, fragment.texcoord;
 
 TEMP __temp1__;
@@ -16,5 +19,10 @@ TEMP __temp2__;
 RSQ __temp2__, __eyeNorm__.w
 
 MOV __eyeNorm__.w, __temp2__;
+
+TEMP __temp3__;
+LIT __temp3__, __coeff__
+
+MOV __coeff__, __temp3__;
 
 END

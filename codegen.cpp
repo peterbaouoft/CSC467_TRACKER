@@ -137,6 +137,15 @@ class ARBAssemblyTable
                 break;
             }
 
+            case LIT_INSTRUCTION:
+            {
+                std::string output_location = va_arg(args, std::string);
+                std::string input = va_arg(args, std::string);
+
+                result_str = "LIT " + output_location + ", "  + input;
+                break;
+            }
+
             }
 
             va_end(args); // End the va_args
@@ -284,35 +293,29 @@ class ARBAssemblyTable
             {
                 FunctionExpression * fe = va_arg(args, FunctionExpression*);
 
-                std::string function_name = fe->function->function_name;
-
+                std::string function_name = va_arg(args, std::string);
+                
                 // Create a temp register to store the expression result
                 std::string result_register_name = create_temp_register_name();
                 buffer << create_assembly_instruction(TEMP_INSTRUCTION, result_register_name) << std::endl;
 
-                std::vector<Expression *> args_list = fe->function->arguments->get_expression_list();
-
-                if (fe->function->function_name == "dp3")
+                if (function_name == "dp3")
                 {
-                    std::string left_result_name = args_list[0]->get_result_register_name();
-                    std::string right_result_name = args_list[1]->get_result_register_name();
+                    std::string left_result_name = va_arg(args, std::string);
+                    std::string right_result_name = va_arg(args, std::string);
                     buffer << create_assembly_instruction(DP3_INSTRUCTION, result_register_name, left_result_name, right_result_name) << std::endl;
-                }else if (fe->function->function_name == "rsq")
+                }else if (function_name == "rsq")
                 {
-                    std::string input_result_name = args_list[0]->get_result_register_name();
+                    std::string input_result_name = va_arg(args, std::string);
                     buffer << create_assembly_instruction(RSQ_INSTRUCTION, result_register_name, input_result_name) << std::endl;
+                }else if (function_name == "lit"){
+                    std::string input_result_name = va_arg(args, std::string);
+                    buffer << create_assembly_instruction(LIT_INSTRUCTION, result_register_name, input_result_name) << std::endl;
                 }
                         
                 // Set the result register name for future references
                 fe->set_result_register_name(result_register_name);
                 break;
-            }
-
-            case ARGUMENTS_NODE:
-            {
-                Arguments* arguments = va_arg(args, Arguments*);
-
-
             }
 
             }
@@ -476,7 +479,22 @@ class codeGenVisitor : public Visitor
                 args[i]->visit(*this);
             }
 
-            std::string function_result_instruction = assembly_table.get_assembly_translation(FUNCTION_NODE, fe);
+            std::string function_result_instruction;
+            std::string function_name = fe->function->function_name;
+            std::vector<Expression *> args_list = fe->function->arguments->get_expression_list();
+
+            if (function_name == "dp3"){
+                std::string left_result_name = args_list[0]->get_result_register_name();
+                std::string right_result_name = args_list[1]->get_result_register_name();
+                function_result_instruction = assembly_table.get_assembly_translation(FUNCTION_NODE, fe, function_name, left_result_name, right_result_name);
+            }else if (function_name == "rsq"){
+                std::string input_result_name = args_list[0]->get_result_register_name();
+                function_result_instruction = assembly_table.get_assembly_translation(FUNCTION_NODE, fe, function_name, input_result_name);
+            }else if (function_name == "lit"){
+                std::string input_result_name = args_list[0]->get_result_register_name();
+                function_result_instruction = assembly_table.get_assembly_translation(FUNCTION_NODE, fe, function_name, input_result_name);
+            }
+            
             push_back_instruction(function_result_instruction);
         }
 
