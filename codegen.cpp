@@ -50,11 +50,19 @@ class ARBAssemblyTable
             temp_register_counter++;
 
             std::string temp_register_name = "temp" + std::to_string(temp_register_counter);
+
+            // We might not even need this
             std::string return_str = insert_register_name_into_map(temp_register_name);
             assert(return_str != "");
 
             return return_str;
         }
+
+    public:
+        const int get_temp_register_count() const {
+            return temp_register_counter;
+        }
+        void set_temp_register_count(const int count){ temp_register_counter = count;}
 
     public:
         /* Purely based on the literal meaning, you return the index correspondent to x,y,z,w */
@@ -133,7 +141,7 @@ class ARBAssemblyTable
                 std::string output_location = va_arg(args, std::string);
                 std::string input = va_arg(args, std::string);
 
-                result_str = "RSQ " + output_location + ", "  + input;
+                result_str = "RSQ " + output_location + ", "  + input + ";";
                 break;
             }
 
@@ -142,7 +150,7 @@ class ARBAssemblyTable
                 std::string output_location = va_arg(args, std::string);
                 std::string input = va_arg(args, std::string);
 
-                result_str = "LIT " + output_location + ", "  + input;
+                result_str = "LIT " + output_location + ", "  + input + ";";
                 break;
             }
 
@@ -411,7 +419,7 @@ class codeGenVisitor : public Visitor
         }
 
         virtual void visit(AssignStatement *assign_stmt) {
-
+            // int old_register_count = assembly_table.get_temp_register_count();
             assign_stmt->variable->visit(*this);
             assign_stmt->expression->visit(*this);
 
@@ -420,6 +428,7 @@ class codeGenVisitor : public Visitor
                                                                                             assign_stmt->expression->get_result_register_name());
 
             push_back_instruction(assign_stmt_instructions);
+            // assembly_table.set_temp_register_count(old_register_count); // Reuse the temp registers
         }
 
         virtual void visit(IfStatement *if_statement) {
