@@ -1,3 +1,19 @@
+# Run or Test the program
+1: You can run some existing tests from the semantic analysis like the following:
+```
+make
+./compiler467 -Da semantic_test/semantic_checking_test/assignment.c
+```
+2: You can run the code generation via files in Demos:
+```
+make
+./compiler467 Demos/Demo1/shader.frag
+``` 
+
+3: Or you can write your own test files like the ones in Demos. 
+The specifications of the shading language can be found at
+http://www.dsrg.utoronto.ca/csc467/lab/MiniGLSLSpec.pdf
+
 # Lab 3 Roadmap
 1: Semantic Analysis (all of the listed items and its rules)
 2: Symbol table construction 
